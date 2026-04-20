@@ -549,31 +549,52 @@
                 <span class="mm-step-ddl">DDL: D-5 ~ D-2</span>
               </div>
               <div class="mm-step-desc">
-                协调角色配音演员或艺人档期 → 完成语音录制 → 音频后期 & 质检 → 平台配置触达任务（关联业务代码）→ 上传语音包
+                协调角色配音演员或艺人档期 → 完成语音录制 → 音频后期 & 质检 → 交付营销短信助手
+              </div>
+              <div class="mm-callout warn" style="margin-top:8px;">
+                <strong>🎙️ 语音录制要求：</strong><br>
+                8000Hz · 16bit · 单声道 · 直接出 <strong>WAV</strong> 格式 · 文件大小尽量在 <strong>6M 以内</strong> · 设备不限制<br>
+                录制完成后交付<strong>营销短信助手</strong>
               </div>
               <div style="margin-top:6px;">
-                <a class="mm-link" href="https://doc.weixin.qq.com/doc/w3_Aa0AQAYUAPsCNwtmJg03iSwu3gWs6?scode=AJEAIQdfAAogu1C3X0AZsA8Ab4ABY" target="_blank">🔗 语音包上传流程文档</a>
+                <a class="mm-link" href="https://doc.weixin.qq.com/doc/w3_Aa0AQAYUAPsCNwtmJg03iSwu3gWs6?scode=AJEAIQdfAAogu1C3X0AZsA8Ab4ABY" target="_blank">🔗 号码包上传文档</a>
               </div>
             </div>
             <div class="mm-step">
               <div class="mm-step-head">
                 <span class="mm-step-num mid-num">8</span>
-                <span class="mm-step-title">网页号码包投放</span>
+                <span class="mm-step-title">语音包 + 号码包上传</span>
                 <span class="mm-step-ddl">DDL: D-2 ~ D-Day</span>
               </div>
-              <div class="mm-step-desc">
-                IC平台上传号码包 → 圈选人群（<strong>系统圈包</strong> 或 <strong>openid上传</strong>）→ 设置触达任务 → 系统实时校验
+
+              <!-- 第一段：语音包（助手完成） -->
+              <div style="margin-top:10px;padding:12px 14px;background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;">
+                <div style="font-size:13px;font-weight:700;color:#1e40af;margin-bottom:6px;">📦 语音包投放（由营销短信助手完成）</div>
+                <div class="mm-step-desc" style="margin-top:0;">
+                  IC平台上传语音包 → 圈选人群（<strong>系统圈包</strong> 或 <strong>openid上传</strong>）→ 设置触达任务 → 系统实时校验
+                </div>
+                <div class="mm-callout info" style="margin-top:8px;">
+                  <strong>首次需申请权限：</strong><br>
+                  投放权限：盘古申请 → 选【短信投放员】/【数据分析员】<br>
+                  业务权限：sms.woa.com → 填项目接口人+业务代码
+                </div>
+                <div style="margin-top:6px;">
+                  <a class="mm-link" href="https://gic.woa.com/" target="_blank">🔗 IC平台</a>
+                  <a class="mm-link" href="https://iwiki.woa.com/p/4012582868" target="_blank">🔗 IC投放指引Wiki</a>
+                  <a class="mm-link" href="https://pangu.woa.com/#/app/authApplication" target="_blank">🔗 盘古权限申请</a>
+                  <a class="mm-link" href="https://sms.woa.com/" target="_blank">🔗 通信业务管理平台</a>
+                </div>
               </div>
-              <div class="mm-callout info">
-                <strong>首次需申请权限：</strong><br>
-                投放权限：盘古申请 → 选【短信投放员】/【数据分析员】<br>
-                业务权限：sms.woa.com → 填项目接口人+业务代码
-              </div>
-              <div style="margin-top:6px;">
-                <a class="mm-link" href="https://gic.woa.com/" target="_blank">🔗 IC平台</a>
-                <a class="mm-link" href="https://iwiki.woa.com/p/4012582868" target="_blank">🔗 IC投放指引Wiki</a>
-                <a class="mm-link" href="https://pangu.woa.com/#/app/authApplication" target="_blank">🔗 盘古权限申请</a>
-                <a class="mm-link" href="https://sms.woa.com/" target="_blank">🔗 通信业务管理平台</a>
+
+              <!-- 第二段：号码包（运营上传） -->
+              <div style="margin-top:10px;padding:12px 14px;background:#fefce8;border:1px solid #fde68a;border-radius:8px;">
+                <div style="font-size:13px;font-weight:700;color:#92400e;margin-bottom:6px;">📋 号码包上传（由运营上传）</div>
+                <div class="mm-step-desc" style="margin-top:0;">
+                  运营按文档指引上传号码包，支持系统圈包或 openid 上传
+                </div>
+                <div style="margin-top:6px;">
+                  <a class="mm-link" href="https://doc.weixin.qq.com/doc/w3_Aa0AQAYUAPsCNwtmJg03iSwu3gWs6?scode=AJEAIQdfAAogu1C3X0AZsA8Ab4ABY" target="_blank">🔗 号码包上传文档</a>
+                </div>
               </div>
             </div>
           </div>
@@ -635,7 +656,7 @@
           <div style="padding:14px 16px;">
             <div style="font-size:12px;color:var(--gray-600);line-height:2;">
               <div>④ 米大师业务代码 <span class="mm-step-ddl" style="font-size:10px;">D-12</span></div>
-              <div>⑧ 网页号码包投放 <span class="mm-step-ddl" style="font-size:10px;">D-2~D-Day</span></div>
+              <div>⑧ 语音包 + 号码包上传 <span class="mm-step-ddl" style="font-size:10px;">D-2~D-Day</span></div>
             </div>
           </div>
         </div>
@@ -975,8 +996,8 @@ const STEPS = [
   { id:'s5', phase:'mid', name:'米大师业务代码', desc:'申请营销业务代码+语音外呼业务代码，同步群里并邮件', ddl:'D-12', textInput:'bizCode', textLabel:'业务代码号', owner:'ops' },
   { id:'s4', phase:'mid', name:'立项 + 充值', desc:'跟财管确认费用来源；市场费用→MSH立项（⚠️选现金不选内领）→IVR充值单', ddl:'D-10', textInput:'mshCode', textLabel:'MSH立项号', owner:'market' },
   { id:'s7', phase:'mid', name:'发邮件审批', desc:'IVR充值成功后，给组长、财管、短信助手发邮件，邮件发送后联系短信助手配置', ddl:'D-8', owner:'market' },
-  { id:'s8', phase:'mid', name:'语音配置', desc:'角色配音演员或艺人录制、后期处理、上传语音包', ddl:'D-5~D-2', owner:'market' },
-  { id:'s9', phase:'mid', name:'网页号码包投放', desc:'IC平台上传号码包，设置触达任务', ddl:'D-2~D-Day', owner:'ops' },
+  { id:'s8', phase:'mid', name:'语音配置', desc:'角色配音演员或艺人录制（8000Hz/16bit/单声道/WAV/≤6M），完成后交付营销短信助手', ddl:'D-5~D-2', owner:'market' },
+  { id:'s9', phase:'mid', name:'语音包 + 号码包上传', desc:'语音包由助手上传；号码包由运营上传', ddl:'D-2~D-Day', owner:'both' },
   { id:'s10', phase:'post', name:'数据回收 & 归档', desc:'IC平台查看数据、费用结算、归档；双方可查阅或群内沟通助手导出', ddl:'D+3~D+7', owner:'both' }
 ];
 
@@ -987,8 +1008,8 @@ const LINKS = {
   s4: [{ text:'IVR平台', url:'http://ivr.woa.com' }],
   s5: [{ text:'米大师申请', url:'http://midas.boss.com/toolbox/ServiceCode/apply' }, { text:'审批查询', url:'http://midas.boss.com/toolbox/ServiceCode/index' }],
   s7: [{ text:'审批邮件模板', url:'https://doc.weixin.qq.com/doc/w2_AFEAlQbdAFw5NjEcWUFQzWuWXSgjo?scode=AJEAIQdfAAoW2R2w48AFEAlQbdAFw&type=0&ShortLinkId=61cd74a5d395f' }],
-  s8: [{ text:'语音包上传流程', url:'https://doc.weixin.qq.com/doc/w3_Aa0AQAYUAPsCNwtmJg03iSwu3gWs6?scode=AJEAIQdfAAogu1C3X0AZsA8Ab4ABY' }],
-  s9: [{ text:'IC平台', url:'https://gic.woa.com/' }, { text:'IC投放指引', url:'https://iwiki.woa.com/p/4012582868' }],
+  s8: [{ text:'号码包上传文档', url:'https://doc.weixin.qq.com/doc/w3_Aa0AQAYUAPsCNwtmJg03iSwu3gWs6?scode=AJEAIQdfAAogu1C3X0AZsA8Ab4ABY' }],
+  s9: [{ text:'IC平台', url:'https://gic.woa.com/' }, { text:'IC投放指引', url:'https://iwiki.woa.com/p/4012582868' }, { text:'号码包上传文档', url:'https://doc.weixin.qq.com/doc/w3_Aa0AQAYUAPsCNwtmJg03iSwu3gWs6?scode=AJEAIQdfAAogu1C3X0AZsA8Ab4ABY' }],
   s10: [{ text:'IC平台数据', url:'https://gic.woa.com/' }]
 };
 
