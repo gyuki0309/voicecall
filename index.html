@@ -427,7 +427,7 @@
               </div>
               <div class="mm-callout warn" style="margin-top:6px;">
                 <strong>📎 此步可上传文件存档：</strong>创意文案、语音脚本等<br>
-                💡 追踪表内可下载「创意文案模板」（含艺人、语音条数、文案内容）
+                💡 追踪表内可下载「创意文案模板」（含艺人或角色名、语音文案、闪信文案、挂机短信文案）
               </div>
             </div>
             <div class="mm-step">
@@ -555,9 +555,6 @@
                 <strong>🎙️ 语音录制要求：</strong><br>
                 8000Hz · 16bit · 单声道 · 直接出 <strong>WAV</strong> 格式 · 文件大小尽量在 <strong>6M 以内</strong> · 设备不限制<br>
                 录制完成后交付<strong>营销短信助手</strong>
-              </div>
-              <div style="margin-top:6px;">
-                <a class="mm-link" href="https://doc.weixin.qq.com/doc/w3_Aa0AQAYUAPsCNwtmJg03iSwu3gWs6?scode=AJEAIQdfAAogu1C3X0AZsA8Ab4ABY" target="_blank">🔗 号码包上传文档</a>
               </div>
             </div>
             <div class="mm-step">
@@ -754,7 +751,6 @@
             <th>游戏节点</th>
             <th>阶段</th>
             <th>状态</th>
-            <th>进度</th>
             <th>投放日期</th>
             <th>进度对比</th>
             <th>附件</th>
@@ -1018,7 +1014,6 @@ const LINKS = {
   s4: [{ text:'IVR平台', url:'http://ivr.woa.com' }],
   s5: [{ text:'米大师申请', url:'http://midas.boss.com/toolbox/ServiceCode/apply' }, { text:'审批查询', url:'http://midas.boss.com/toolbox/ServiceCode/index' }],
   s7: [{ text:'审批邮件模板', url:'https://doc.weixin.qq.com/doc/w2_AFEAlQbdAFw5NjEcWUFQzWuWXSgjo?scode=AJEAIQdfAAoW2R2w48AFEAlQbdAFw&type=0&ShortLinkId=61cd74a5d395f' }],
-  s8: [{ text:'号码包上传文档', url:'https://doc.weixin.qq.com/doc/w3_Aa0AQAYUAPsCNwtmJg03iSwu3gWs6?scode=AJEAIQdfAAogu1C3X0AZsA8Ab4ABY' }],
   s9: [{ text:'IC平台', url:'https://gic.woa.com/' }, { text:'IC投放指引', url:'https://iwiki.woa.com/p/4012582868' }, { text:'号码包上传文档', url:'https://doc.weixin.qq.com/doc/w3_Aa0AQAYUAPsCNwtmJg03iSwu3gWs6?scode=AJEAIQdfAAogu1C3X0AZsA8Ab4ABY' }],
   s10: [{ text:'IC平台数据', url:'https://gic.woa.com/' }]
 };
@@ -1193,11 +1188,9 @@ function renderTable() {
     const prog = getProgress(t);
     const fc = getFileCount(t);
     const ideal = getIdealProgress(t);
-    const colors = { 0:'var(--gray-400)', 25:'var(--danger)', 50:'var(--warning)', 75:'var(--primary)', 100:'var(--success)' };
-    const colorKey = prog.pct >= 100 ? 100 : prog.pct >= 75 ? 75 : prog.pct >= 50 ? 50 : prog.pct >= 25 ? 25 : 0;
     const isViewer = t.owner && t.owner.toLowerCase() !== currentUser.toLowerCase();
     const viewerBadge = isViewer ? '<span style="font-size:10px;color:var(--gray-400);background:var(--gray-100);padding:1px 6px;border-radius:8px;margin-left:6px;">查阅</span>' : '';
-    // Progress comparison cell
+    // Progress comparison cell (with step count x/9)
     let compCell = '';
     if (ideal) {
       const ahead = prog.pct >= ideal.pct;
@@ -1205,7 +1198,7 @@ function renderTable() {
       const realColor = ahead ? '#6ee7b7' : '#fca5a5'; // green-300 or red-300
       const statusText = ahead ? (prog.pct > ideal.pct ? '超前' : '同步') : '落后';
       const statusColor = ahead ? 'var(--success)' : 'var(--danger)';
-      compCell = `<td style="min-width:130px;">
+      compCell = `<td style="min-width:150px;">
         <div style="font-size:10px;color:var(--gray-500);margin-bottom:3px;display:flex;justify-content:space-between;">
           <span>理想 ${ideal.pct}%</span><span style="color:${statusColor};font-weight:600;">${statusText}</span>
         </div>
@@ -1213,7 +1206,9 @@ function renderTable() {
           <div style="position:absolute;top:0;left:0;height:6px;width:${ideal.pct}%;background:${idealColor};border-radius:3px;" title="理想进度 ${ideal.pct}%"></div>
           <div style="position:absolute;bottom:0;left:0;height:6px;width:${prog.pct}%;background:${realColor};border-radius:3px;" title="实际进度 ${prog.pct}%"></div>
         </div>
-        <div style="font-size:10px;color:var(--gray-500);margin-top:2px;">实际 ${prog.pct}%</div>
+        <div style="font-size:10px;color:var(--gray-500);margin-top:2px;display:flex;justify-content:space-between;">
+          <span>实际 ${prog.pct}%</span><span style="font-weight:500;">步骤 ${prog.done}/${prog.total}</span>
+        </div>
       </td>`;
     } else {
       compCell = `<td style="font-size:11px;color:var(--gray-400);text-align:center;">未设投放日期</td>`;
@@ -1225,12 +1220,6 @@ function renderTable() {
       <td>${esc(t.node)}</td>
       <td><span class="phase-tag ${phase.color}">${phase.name}</span></td>
       <td><span class="badge ${status.cls}">${status.label}</span></td>
-      <td style="min-width:100px">
-        <div style="display:flex;align-items:center;gap:6px;">
-          <div class="progress-bar" style="flex:1"><div class="progress-fill" style="width:${prog.pct}%;background:${colors[colorKey]}"></div></div>
-          <span style="font-size:11px;color:var(--gray-400)">${prog.done}/${prog.total}</span>
-        </div>
-      </td>
       <td style="white-space:nowrap">${t.date || '—'}</td>
       ${compCell}
       <td><span class="file-count"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>${fc}</span></td>
@@ -1680,9 +1669,8 @@ function saveTextInput(key, val) {
 }
 
 function downloadTemplate() {
-  const csv = '\uFEFF艺人,语音条数,语音类型,闪信文案,挂机文案,备注\n' +
-    '黄子弘凡,2,语音外呼,【元梦之星】黄子弘凡给你来电啦！注意接听,听说黄子弘凡给你来电了？点击跳转我们在元梦之星-山海寻灵等你：【官网链接】,案例参考\n' +
-    ',,闪信,,\n';
+  const csv = '\uFEFF艺人或角色名,语音文案,闪信文案,挂机短信文案\n' +
+    '黄子弘凡,嗨~我是黄子弘凡 快来元梦之星山海寻灵找我吧！,【元梦之星】黄子弘凡给你来电啦！注意接听,听说黄子弘凡给你来电了？点击跳转我们在元梦之星-山海寻灵等你：【官网链接】\n';
   const blob = new Blob([csv], {type:'text/csv;charset=utf-8;'});
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
