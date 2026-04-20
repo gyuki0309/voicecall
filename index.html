@@ -1,0 +1,1742 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>游戏上线语音外呼追踪表</title>
+<style>
+  :root {
+    --bg: #f5f7fa;
+    --card: #ffffff;
+    --primary: #1a56db;
+    --primary-light: #e8effc;
+    --success: #059669;
+    --success-light: #d1fae5;
+    --warning: #d97706;
+    --warning-light: #fef3c7;
+    --danger: #dc2626;
+    --danger-light: #fee2e2;
+    --gray-100: #f3f4f6;
+    --gray-200: #e5e7eb;
+    --gray-300: #d1d5db;
+    --gray-400: #9ca3af;
+    --gray-500: #6b7280;
+    --gray-600: #4b5563;
+    --gray-700: #374151;
+    --gray-800: #1f2937;
+    --gray-900: #111827;
+    --shadow: 0 1px 3px rgba(0,0,0,.1), 0 1px 2px rgba(0,0,0,.06);
+    --shadow-md: 0 4px 6px rgba(0,0,0,.07), 0 2px 4px rgba(0,0,0,.06);
+    --shadow-lg: 0 10px 15px rgba(0,0,0,.1), 0 4px 6px rgba(0,0,0,.05);
+    --radius: 8px;
+    --radius-lg: 12px;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: var(--bg); color: var(--gray-800); line-height: 1.5; }
+
+  /* Header */
+  .header { background: linear-gradient(135deg, #1e3a5f 0%, #1a56db 100%); color: #fff; padding: 24px 32px; }
+  .header h1 { font-size: 22px; font-weight: 700; margin-bottom: 4px; }
+  .header p { font-size: 13px; opacity: .8; }
+  .header-actions { display: flex; gap: 10px; margin-top: 16px; flex-wrap: wrap; }
+  .header-actions button { background: rgba(255,255,255,.15); border: 1px solid rgba(255,255,255,.25); color: #fff; padding: 7px 16px; border-radius: 6px; font-size: 13px; cursor: pointer; transition: all .2s; }
+  .header-actions button:hover { background: rgba(255,255,255,.25); }
+  .header-actions button.btn-new { background: #fff; color: var(--primary); font-weight: 600; border-color: #fff; }
+
+  /* Layout */
+  .container { max-width: 1400px; margin: 0 auto; padding: 24px; }
+
+  /* Stats bar */
+  .stats-bar { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; margin-bottom: 24px; }
+  .stat-card { background: var(--card); border-radius: var(--radius); padding: 16px; box-shadow: var(--shadow); text-align: center; }
+  .stat-card .num { font-size: 28px; font-weight: 700; }
+  .stat-card .label { font-size: 12px; color: var(--gray-500); margin-top: 2px; }
+  .stat-card.total .num { color: var(--gray-700); }
+  .stat-card.progress .num { color: var(--primary); }
+  .stat-card.done .num { color: var(--success); }
+  .stat-card.blocked .num { color: var(--danger); }
+
+  /* Table */
+  .table-wrap { background: var(--card); border-radius: var(--radius-lg); box-shadow: var(--shadow); overflow: hidden; }
+  .table-header { padding: 16px 20px; border-bottom: 1px solid var(--gray-200); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; }
+  .table-header h2 { font-size: 15px; font-weight: 600; }
+  .filter-group { display: flex; gap: 6px; flex-wrap: wrap; }
+  .filter-btn { padding: 4px 12px; border-radius: 20px; border: 1px solid var(--gray-300); background: #fff; font-size: 12px; cursor: pointer; color: var(--gray-600); transition: all .2s; }
+  .filter-btn.active, .filter-btn:hover { background: var(--primary); color: #fff; border-color: var(--primary); }
+
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  thead th { background: var(--gray-100); padding: 10px 12px; text-align: left; font-weight: 600; font-size: 12px; color: var(--gray-500); text-transform: uppercase; letter-spacing: .5px; border-bottom: 1px solid var(--gray-200); white-space: nowrap; }
+  tbody td { padding: 12px; border-bottom: 1px solid var(--gray-100); vertical-align: top; }
+  tbody tr { transition: background .15s; cursor: pointer; }
+  tbody tr:hover { background: var(--gray-50, #f9fafb); }
+
+  /* Status badge */
+  .badge { display: inline-block; padding: 2px 10px; border-radius: 12px; font-size: 11px; font-weight: 600; white-space: nowrap; }
+  .badge-pending { background: var(--gray-200); color: var(--gray-600); }
+  .badge-progress { background: var(--primary-light); color: var(--primary); }
+  .badge-done { background: var(--success-light); color: var(--success); }
+  .badge-blocked { background: var(--danger-light); color: var(--danger); }
+
+  /* Phase tag */
+  .phase-tag { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; }
+  .phase-pre { background: #dbeafe; color: #1e40af; }
+  .phase-mid { background: #fef3c7; color: #92400e; }
+  .phase-post { background: #d1fae5; color: #065f46; }
+
+  /* Progress bar */
+  .progress-bar { width: 100%; height: 6px; background: var(--gray-200); border-radius: 3px; overflow: hidden; }
+  .progress-fill { height: 100%; border-radius: 3px; transition: width .3s; }
+
+  /* File count */
+  .file-count { display: inline-flex; align-items: center; gap: 4px; font-size: 12px; color: var(--gray-500); }
+  .file-count svg { width: 14px; height: 14px; }
+
+  /* Modal */
+  .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.4); z-index: 1000; justify-content: center; align-items: flex-start; padding: 40px 20px; overflow-y: auto; }
+  .modal-overlay.show { display: flex; }
+  .modal { background: var(--card); border-radius: var(--radius-lg); width: 100%; max-width: 720px; box-shadow: var(--shadow-lg); animation: slideUp .25s ease; }
+  @keyframes slideUp { from { opacity:0; transform:translateY(20px); } to { opacity:1; transform:translateY(0); } }
+  .modal-head { padding: 20px 24px; border-bottom: 1px solid var(--gray-200); display: flex; justify-content: space-between; align-items: center; }
+  .modal-head h3 { font-size: 16px; }
+  .modal-close { width: 32px; height: 32px; border-radius: 6px; border: none; background: var(--gray-100); cursor: pointer; font-size: 18px; display: flex; align-items: center; justify-content: center; color: var(--gray-500); }
+  .modal-close:hover { background: var(--gray-200); }
+  .modal-body { padding: 24px; max-height: 70vh; overflow-y: auto; }
+  .modal-foot { padding: 16px 24px; border-top: 1px solid var(--gray-200); display: flex; justify-content: flex-end; gap: 8px; }
+
+  /* Form */
+  .form-group { margin-bottom: 16px; }
+  .form-group label { display: block; font-size: 13px; font-weight: 600; color: var(--gray-700); margin-bottom: 4px; }
+  .form-group input, .form-group select, .form-group textarea { width: 100%; padding: 8px 12px; border: 1px solid var(--gray-300); border-radius: 6px; font-size: 13px; font-family: inherit; transition: border-color .2s; }
+  .form-group input:focus, .form-group select:focus, .form-group textarea:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px rgba(26,86,219,.1); }
+  .form-group textarea { resize: vertical; min-height: 60px; }
+  .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .form-hint { font-size: 11px; color: var(--gray-400); margin-top: 2px; }
+
+  /* Steps in modal */
+  .steps-section { margin-top: 20px; }
+  .steps-section h4 { font-size: 14px; font-weight: 600; margin-bottom: 12px; color: var(--gray-700); }
+  .step-item { display: flex; gap: 12px; padding: 12px; border: 1px solid var(--gray-200); border-radius: var(--radius); margin-bottom: 8px; align-items: flex-start; transition: border-color .2s; }
+  .step-item:hover { border-color: var(--gray-300); }
+  .step-check { flex-shrink: 0; width: 20px; height: 20px; border-radius: 50%; border: 2px solid var(--gray-300); cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all .2s; margin-top: 2px; }
+  .step-check.checked { background: var(--success); border-color: var(--success); }
+  .step-check.checked::after { content: '✓'; color: #fff; font-size: 11px; font-weight: 700; }
+  .step-body { flex: 1; }
+  .step-name { font-size: 13px; font-weight: 500; }
+  .step-desc { font-size: 12px; color: var(--gray-500); margin-top: 2px; }
+  .step-name.done-text { text-decoration: line-through; color: var(--gray-400); }
+
+  /* File upload area */
+  .file-section { margin-top: 16px; }
+  .file-section h4 { font-size: 14px; font-weight: 600; margin-bottom: 8px; color: var(--gray-700); display: flex; align-items: center; gap: 6px; }
+  .upload-zone { border: 2px dashed var(--gray-300); border-radius: var(--radius); padding: 24px; text-align: center; cursor: pointer; transition: all .2s; background: var(--gray-50, #f9fafb); }
+  .upload-zone:hover, .upload-zone.dragover { border-color: var(--primary); background: var(--primary-light); }
+  .upload-zone p { font-size: 13px; color: var(--gray-500); }
+  .upload-zone .upload-icon { font-size: 28px; margin-bottom: 6px; }
+  .upload-zone input { display: none; }
+  .file-list { margin-top: 8px; }
+  .file-item { display: flex; align-items: center; gap: 8px; padding: 8px 12px; background: var(--gray-100); border-radius: 6px; margin-bottom: 4px; font-size: 12px; }
+  .file-item .fname { flex: 1; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .file-item .fsize { color: var(--gray-400); font-size: 11px; }
+  .file-item .fdate { color: var(--gray-400); font-size: 11px; }
+  .file-item .fremove { width: 20px; height: 20px; border-radius: 4px; border: none; background: transparent; cursor: pointer; color: var(--gray-400); font-size: 14px; display: flex; align-items: center; justify-content: center; }
+  .file-item .fremove:hover { background: var(--danger-light); color: var(--danger); }
+  .file-icon { font-size: 16px; }
+
+  /* Notes */
+  .notes-section { margin-top: 16px; }
+  .notes-section h4 { font-size: 14px; font-weight: 600; margin-bottom: 8px; color: var(--gray-700); }
+  .note-entry { background: var(--gray-100); border-radius: 6px; padding: 10px 12px; margin-bottom: 6px; font-size: 12px; }
+  .note-entry .note-time { color: var(--gray-400); font-size: 11px; }
+  .note-entry .note-text { margin-top: 2px; }
+  .note-input-row { display: flex; gap: 6px; }
+  .note-input-row input { flex: 1; }
+  .note-input-row button { flex-shrink: 0; }
+
+  /* Buttons */
+  .btn { padding: 8px 16px; border-radius: 6px; font-size: 13px; font-weight: 500; cursor: pointer; border: 1px solid transparent; transition: all .2s; }
+  .btn-primary { background: var(--primary); color: #fff; }
+  .btn-primary:hover { background: #1648b8; }
+  .btn-ghost { background: transparent; color: var(--gray-600); border-color: var(--gray-300); }
+  .btn-ghost:hover { background: var(--gray-100); }
+  .btn-danger { background: var(--danger); color: #fff; }
+  .btn-sm { padding: 4px 10px; font-size: 12px; }
+
+  /* Responsive */
+  @media (max-width: 768px) {
+    .container { padding: 12px; }
+    .form-row { grid-template-columns: 1fr; }
+    .stats-bar { grid-template-columns: repeat(2, 1fr); }
+    table { font-size: 12px; }
+    thead th, tbody td { padding: 8px 6px; }
+    .header { padding: 16px; }
+  }
+
+  /* Empty state */
+  .empty-state { text-align: center; padding: 60px 20px; color: var(--gray-400); }
+  .empty-state .empty-icon { font-size: 48px; margin-bottom: 12px; }
+  .empty-state p { font-size: 14px; }
+
+  /* Links in table */
+  .link-list { display: flex; flex-direction: column; gap: 2px; }
+  .link-list a { color: var(--primary); font-size: 12px; text-decoration: none; }
+  .link-list a:hover { text-decoration: underline; }
+
+  /* Toast */
+  .toast { position: fixed; bottom: 24px; right: 24px; background: var(--gray-800); color: #fff; padding: 12px 20px; border-radius: var(--radius); font-size: 13px; z-index: 2000; animation: fadeIn .3s; box-shadow: var(--shadow-lg); }
+  @keyframes fadeIn { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:translateY(0); } }
+
+  /* ========== Mindmap Section ========== */
+  .mindmap-section { max-width: 1400px; margin: 0 auto; padding: 24px 24px 0; }
+  .mindmap-toggle { background: var(--card); border-radius: var(--radius-lg); box-shadow: var(--shadow); overflow: hidden; }
+  .mindmap-header { padding: 16px 20px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; user-select: none; border-bottom: 1px solid var(--gray-200); }
+  .mindmap-header h2 { font-size: 16px; font-weight: 700; display: flex; align-items: center; gap: 8px; }
+  .mindmap-header .toggle-icon { font-size: 12px; transition: transform .3s; color: var(--gray-400); }
+  .mindmap-header .toggle-icon.open { transform: rotate(180deg); }
+  .mindmap-body { padding: 0; max-height: 0; overflow: hidden; transition: max-height .4s ease, padding .3s ease; }
+  .mindmap-body.open { max-height: 8000px; padding: 24px; }
+
+  /* Phase columns — vertical stacking */
+  .phase-flow { display: flex; flex-direction: column; gap: 24px; margin-bottom: 20px; }
+  .phase-col { min-width: 0; }
+  .phase-col-head { padding: 12px 20px; border-radius: 10px 10px 0 0; font-weight: 700; font-size: 15px; color: #fff; display: flex; align-items: center; gap: 8px; }
+  .phase-col-head.pre-head { background: linear-gradient(135deg, #3b82f6, #2563eb); }
+  .phase-col-head.mid-head { background: linear-gradient(135deg, #f59e0b, #d97706); }
+  .phase-col-head.post-head { background: linear-gradient(135deg, #10b981, #059669); }
+  .phase-col-body { border: 1px solid var(--gray-200); border-top: none; border-radius: 0 0 10px 10px; background: #fff; display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 0; }
+  @media (max-width: 768px) { .phase-col-body { grid-template-columns: 1fr; } }
+  .phase-col-body .mm-step { border-bottom: 1px solid var(--gray-100); border-right: 1px solid var(--gray-100); }
+  .phase-col-body .mm-step:last-child { border-bottom: none; }
+
+  /* Responsibility tag */
+  .mm-owner-tag { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: 600; margin-left: 8px; vertical-align: middle; }
+  .mm-owner-tag.market { background: #dbeafe; color: #1e40af; }
+  .mm-owner-tag.ops { background: #fef3c7; color: #92400e; }
+  .mm-owner-tag.both { background: #d1fae5; color: #065f46; }
+
+  /* Step card in mindmap */
+  .mm-step { padding: 14px 16px; border-bottom: 1px solid var(--gray-100); position: relative; }
+  .mm-step:last-child { border-bottom: none; }
+  .mm-step-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; }
+  .mm-step-num { display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px; border-radius: 50%; font-size: 12px; font-weight: 700; flex-shrink: 0; }
+  .mm-step-num.pre-num { background: #dbeafe; color: #1e40af; }
+  .mm-step-num.mid-num { background: #fef3c7; color: #92400e; }
+  .mm-step-num.post-num { background: #d1fae5; color: #065f46; }
+  .mm-step-title { font-size: 13px; font-weight: 600; flex: 1; }
+  .mm-step-ddl { font-size: 11px; color: var(--danger); font-weight: 600; white-space: nowrap; background: var(--danger-light); padding: 2px 8px; border-radius: 10px; }
+  .mm-step-desc { font-size: 12px; color: var(--gray-500); margin-top: 6px; line-height: 1.6; }
+  .mm-step-desc strong { color: var(--gray-700); }
+
+  /* Callout boxes */
+  .mm-callout { margin-top: 8px; padding: 10px 12px; border-radius: 6px; font-size: 12px; line-height: 1.6; }
+  .mm-callout.info { background: #eff6ff; border-left: 3px solid #3b82f6; color: #1e40af; }
+  .mm-callout.warn { background: #fffbeb; border-left: 3px solid #f59e0b; color: #92400e; }
+  .mm-callout.success { background: #ecfdf5; border-left: 3px solid #10b981; color: #065f46; }
+  .mm-callout.danger { background: #fef2f2; border-left: 3px solid #ef4444; color: #991b1b; }
+
+  /* Reference table in mindmap */
+  .mm-ref-table { width: 100%; border-collapse: collapse; font-size: 12px; margin-top: 8px; }
+  .mm-ref-table th { background: var(--gray-100); padding: 6px 10px; text-align: left; font-weight: 600; font-size: 11px; color: var(--gray-500); border-bottom: 1px solid var(--gray-200); }
+  .mm-ref-table td { padding: 6px 10px; border-bottom: 1px solid var(--gray-100); color: var(--gray-600); }
+  .mm-ref-table tr:last-child td { border-bottom: none; }
+
+  /* Links in mindmap */
+  .mm-link { display: inline-flex; align-items: center; gap: 4px; color: var(--primary); font-size: 12px; text-decoration: none; margin-right: 12px; margin-top: 4px; }
+  .mm-link:hover { text-decoration: underline; }
+
+  /* Copy text */
+  .mm-copy { font-family: 'SF Mono', 'Cascadia Code', 'Consolas', monospace; background: var(--gray-100); padding: 1px 6px; border-radius: 3px; font-size: 11px; color: var(--gray-600); }
+
+
+  /* Phase accordion */
+  .phase-col-head { cursor: pointer; user-select: none; position: relative; transition: border-radius .3s; }
+  .phase-col-head::after { content: '▼'; position: absolute; right: 16px; top: 50%; transform: translateY(-50%) rotate(-90deg); font-size: 11px; opacity: .7; transition: transform .3s; }
+  .phase-col-head.phase-open::after { transform: translateY(-50%) rotate(0deg); }
+  .phase-col-head:not(.phase-open) { border-radius: 10px; }
+  .phase-col-body { max-height: 0; overflow: hidden; transition: max-height .4s ease; }
+  .phase-col-body.phase-body-open { max-height: 5000px; }
+
+  /* Standalone info modules */
+  .info-module { background: var(--card); border-radius: var(--radius-lg); box-shadow: var(--shadow); overflow: hidden; }
+  .info-module-header { padding: 16px 20px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; user-select: none; border-bottom: 1px solid var(--gray-200); }
+  .info-module-header h2 { font-size: 16px; font-weight: 700; display: flex; align-items: center; gap: 8px; }
+  .info-module-header .toggle-icon { font-size: 12px; transition: transform .3s; color: var(--gray-400); }
+  .info-module-header .toggle-icon.open { transform: rotate(180deg); }
+  .info-module-body { padding: 0; max-height: 0; overflow: hidden; transition: max-height .4s ease, padding .3s ease; }
+  .info-module-body.open { max-height: 5000px; padding: 24px; }
+
+  /* ========== Login Screen ========== */
+  .login-screen { display: flex; align-items: center; justify-content: center; min-height: 100vh; background: linear-gradient(135deg, #0f172a 0%, #1e3a5f 50%, #1a56db 100%); }
+  .login-card { background: var(--card); border-radius: var(--radius-lg); padding: 40px; width: 380px; box-shadow: var(--shadow-lg); text-align: center; }
+  .login-card .login-logo { font-size: 48px; margin-bottom: 12px; }
+  .login-card h2 { font-size: 20px; font-weight: 700; color: var(--gray-800); margin-bottom: 4px; }
+  .login-card .login-sub { font-size: 13px; color: var(--gray-500); margin-bottom: 24px; }
+  .login-card .form-group { text-align: left; }
+  .login-card .login-hint { font-size: 11px; color: var(--gray-400); margin-top: 16px; }
+  .login-card .wecom-badge { display: inline-flex; align-items: center; gap: 6px; padding: 4px 12px; background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 20px; font-size: 11px; color: #15803d; margin-bottom: 20px; }
+
+  /* User bar */
+  .user-bar { display: flex; align-items: center; gap: 10px; }
+  .user-avatar { width: 32px; height: 32px; border-radius: 50%; background: rgba(255,255,255,.2); display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 700; color: #fff; border: 2px solid rgba(255,255,255,.3); }
+  .user-name { font-size: 13px; color: rgba(255,255,255,.9); font-weight: 500; }
+  .user-logout { font-size: 11px; color: rgba(255,255,255,.5); cursor: pointer; margin-left: auto; padding: 4px 10px; border-radius: 4px; border: 1px solid rgba(255,255,255,.2); background: transparent; transition: all .2s; }
+  .user-logout:hover { background: rgba(255,255,255,.1); color: rgba(255,255,255,.8); }
+
+  /* ========== Key Info Summary ========== */
+  .key-info-summary { background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%); border: 1px solid #bae6fd; border-radius: var(--radius); padding: 16px; margin-bottom: 16px; }
+  .key-info-summary h4 { font-size: 14px; font-weight: 700; color: #0369a1; margin-bottom: 12px; display: flex; align-items: center; gap: 6px; }
+  .key-info-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 8px; }
+  .key-info-item { background: #fff; border-radius: 6px; padding: 10px 12px; border: 1px solid #e0f2fe; }
+  .key-info-item .ki-label { font-size: 11px; color: var(--gray-500); font-weight: 600; text-transform: uppercase; }
+  .key-info-item .ki-value { font-size: 13px; font-weight: 600; color: var(--gray-800); margin-top: 2px; word-break: break-all; }
+  .key-info-item .ki-value.empty { color: var(--gray-400); font-weight: 400; font-style: italic; }
+
+  /* ========== Viewers / Permission ========== */
+  .viewers-section { margin-top: 16px; }
+  .viewers-section h4 { font-size: 14px; font-weight: 600; margin-bottom: 8px; color: var(--gray-700); display: flex; align-items: center; gap: 6px; }
+  .viewer-list { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; }
+  .viewer-tag { display: inline-flex; align-items: center; gap: 4px; padding: 4px 10px; background: var(--primary-light); color: var(--primary); border-radius: 16px; font-size: 12px; font-weight: 500; }
+  .viewer-tag .owner-badge { background: var(--primary); color: #fff; padding: 1px 6px; border-radius: 10px; font-size: 10px; font-weight: 700; margin-left: 2px; }
+  .viewer-tag .vt-remove { cursor: pointer; opacity: .5; margin-left: 2px; font-size: 14px; }
+  .viewer-tag .vt-remove:hover { opacity: 1; color: var(--danger); }
+  .viewer-add-row { display: flex; gap: 6px; }
+  .viewer-add-row input { flex: 1; padding: 6px 10px; border: 1px solid var(--gray-300); border-radius: 6px; font-size: 12px; }
+  /* Autocomplete */
+  .ac-wrapper { position: relative; }
+  .ac-dropdown { position: absolute; top: 100%; left: 0; right: 0; background: #fff; border: 1px solid var(--gray-200); border-radius: 8px; box-shadow: 0 8px 24px rgba(0,0,0,.12); max-height: 200px; overflow-y: auto; z-index: 999; display: none; margin-top: 4px; }
+  .ac-dropdown.show { display: block; }
+  .ac-item { padding: 8px 12px; cursor: pointer; font-size: 13px; color: var(--gray-700); display: flex; align-items: center; gap: 6px; }
+  .ac-item:hover, .ac-item.active { background: var(--primary-light); color: var(--primary); }
+  .ac-item .ac-id { font-weight: 600; }
+  .ac-item .ac-name { color: var(--gray-500); font-size: 11px; }
+  .ac-empty { padding: 12px; text-align: center; color: var(--gray-400); font-size: 12px; }
+  .viewer-add-row { position: relative; }
+  /* Delete link */
+  .del-link { font-size: 12px; color: var(--gray-400); cursor: pointer; text-decoration: underline; text-underline-offset: 2px; transition: color .15s; }
+  .del-link:hover { color: var(--danger); }
+</style>
+</head>
+<body>
+
+<!-- ========== Login Screen ========== -->
+<div class="login-screen" id="loginScreen">
+  <div class="login-card">
+    <div class="login-logo">🎙️</div>
+    <div class="wecom-badge">🏢 企业微信授权</div>
+    <h2>游戏上线语音外呼追踪表</h2>
+    <p class="login-sub">输入你的企业微信名登录，只能查看自己发起的项目</p>
+    <div class="form-group">
+      <label>企业微信名 *</label>
+      <div class="ac-wrapper">
+        <input id="loginName" placeholder="例：yukigong" autocomplete="off" oninput="onAcInput(this,'loginAcDrop')" onkeydown="onAcKeydown(event,this,'loginAcDrop',function(v){document.getElementById('loginName').value=v;hideAcDrop('loginAcDrop')});if(event.key==='Enter'&&!document.querySelector('#loginAcDrop.show'))doLogin()" onfocus="onAcInput(this,'loginAcDrop')">
+        <div class="ac-dropdown" id="loginAcDrop"></div>
+      </div>
+      <div class="form-hint">请输入你的企业微信用户名（英文ID）</div>
+    </div>
+    <div style="margin-top:16px;">
+      <button class="btn btn-primary" style="width:100%;padding:10px;" onclick="doLogin()">登 录</button>
+    </div>
+    <p class="login-hint">☁️ 数据已启用云端同步，团队成员可共享查看</p>
+  </div>
+</div>
+
+<!-- ========== Main App (hidden until login) ========== -->
+<div id="mainApp" style="display:none;">
+
+<div class="header">
+  <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:12px;">
+    <div>
+      <h1>🎙️ 游戏上线语音外呼追踪表</h1>
+      <p>游戏节点上线前语音外呼 / 闪信全流程追踪管理</p>
+      <p style="font-size:11px;color:rgba(255,255,255,.5);margin-top:4px;">如有疑问可联系 @yukigong</p>
+    </div>
+    <div class="user-bar">
+      <div class="user-avatar" id="userAvatar"></div>
+      <span class="user-name" id="userName"></span>
+      <button class="user-logout" onclick="doLogout()">退出登录</button>
+    </div>
+  </div>
+  <div class="header-actions">
+    <button class="btn-new" onclick="openNewTask()">＋ 新建呼叫任务</button>
+  </div>
+</div>
+
+<!-- ========== 1. 全流程思维导图 ========== -->
+<div class="mindmap-section">
+  <div class="mindmap-toggle">
+    <div class="mindmap-header" onclick="toggleMindmap()">
+      <h2>🗺️ 游戏上线语音外呼全流程思维导图</h2>
+      <span class="toggle-icon open" id="mmToggleIcon">▼</span>
+    </div>
+    <div class="mindmap-body open" id="mmBody">
+
+      <!-- 呼叫形式实拍参考 -->
+      <div style="margin-bottom:24px;">
+        <div style="font-size:15px;font-weight:700;color:var(--gray-800);margin-bottom:14px;display:flex;align-items:center;gap:8px;">
+          📸 呼叫形式参考（实拍截图）
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;">
+          <div style="display:flex;flex-direction:column;">
+            <div style="background:#f8fafc;border:1px solid var(--gray-200);border-radius:12px;overflow:hidden;box-shadow:var(--shadow);height:280px;display:flex;align-items:center;justify-content:center;">
+              <img src="assets/语音外呼.jpg" alt="语音外呼截图" style="height:100%;width:auto;max-width:100%;object-fit:contain;">
+            </div>
+            <div style="text-align:center;margin-top:8px;font-size:13px;font-weight:600;color:var(--primary);">📞 语音外呼</div>
+            <div style="text-align:center;font-size:11px;color:var(--gray-500);margin-top:2px;">用户接到来电，播放艺人语音</div>
+          </div>
+          <div style="display:flex;flex-direction:column;">
+            <div style="background:#f8fafc;border:1px solid var(--gray-200);border-radius:12px;overflow:hidden;box-shadow:var(--shadow);height:280px;display:flex;align-items:center;justify-content:center;">
+              <img src="assets/闪信.png" alt="闪信截图" style="height:100%;width:auto;max-width:100%;object-fit:contain;">
+            </div>
+            <div style="text-align:center;margin-top:8px;font-size:13px;font-weight:600;color:var(--primary);">💬 闪信</div>
+            <div style="text-align:center;font-size:11px;color:var(--gray-500);margin-top:2px;">来电时弹窗显示来电身份</div>
+          </div>
+          <div style="display:flex;flex-direction:column;">
+            <div style="background:#f8fafc;border:1px solid var(--gray-200);border-radius:12px;overflow:hidden;box-shadow:var(--shadow);height:280px;display:flex;align-items:center;justify-content:center;">
+              <img src="assets/挂机短信.jpg" alt="挂机文案截图" style="height:100%;width:auto;max-width:100%;object-fit:contain;">
+            </div>
+            <div style="text-align:center;margin-top:8px;font-size:13px;font-weight:600;color:var(--primary);">📝 挂机文案</div>
+            <div style="text-align:center;font-size:11px;color:var(--gray-500);margin-top:2px;">通话结束后下发短信，可带官网链接</div>
+          </div>
+        </div>
+        <div style="margin-top:12px;padding:10px 16px;background:#fffbeb;border-left:4px solid #f59e0b;border-radius:0 8px 8px 0;font-size:12px;color:#92400e;line-height:1.8;">
+          <strong>⚠️ 文案规则：</strong><br>
+          • <strong>闪信文案</strong>只能表现来电身份（如"XX给您来电，请注意接听"），<span style="color:#dc2626;font-weight:600;">不能引导活动推广</span><br>
+          • <strong>挂机文案</strong>可带官网链接，用于引导用户跳转活动页
+        </div>
+      </div>
+
+      <!-- 三阶段手风琴 -->
+      <div class="phase-flow">
+
+        <!-- PHASE 1: 前期确认 -->
+        <div class="phase-col">
+          <div class="phase-col-head pre-head" onclick="togglePhase(this)">📋 前期确认（D-14 ~ D-12）</div>
+          <div class="phase-col-body">
+            <div class="mm-step">
+              <div class="mm-step-head">
+                <span class="mm-step-num pre-num">1</span>
+                <span class="mm-step-title">需求发起 & 文案创意</span>
+                <span class="mm-step-ddl">DDL: D-14</span>
+              </div>
+              <div class="mm-step-desc">
+                确定<strong>游戏节点</strong>（版本更新/活动上线/周年庆）→ 确定<strong>哪位艺人</strong>出声 → 确认呼叫形式（语音外呼/闪信）→ 负责人提供<strong>具体文案</strong>内部过审
+              </div>
+              <div class="mm-callout info">
+                <strong>📝 文案参考（元梦×黄子弘凡）：</strong><br>
+                闪信：【元梦之星】黄子弘凡给你来电啦！注意接听<br>
+                挂机：听说黄子弘凡给你来电了？点击跳转，我们在元梦之星-山海寻灵等你：【官网链接】
+              </div>
+              <div class="mm-callout warn" style="margin-top:6px;">
+                <strong>📎 此步可上传文件存档：</strong>创意文案、语音脚本等<br>
+                💡 追踪表内可下载「创意文案模板」（含艺人、语音条数、文案内容）
+              </div>
+            </div>
+            <div class="mm-step">
+              <div class="mm-step-head">
+                <span class="mm-step-num pre-num">2</span>
+                <span class="mm-step-title">联系营销短信助手</span>
+                <span class="mm-step-ddl">DDL: D-14</span>
+              </div>
+              <div class="mm-step-desc">
+                文案过审后，立即联系营销短信助手（企微: <span class="mm-copy">tencentSMS</span>）推进以下事项：<br>
+                ① <strong>确认投放时间</strong>（精确到日期和时段）& <strong>投放量级</strong>（呼叫人数/批次）& 目标用户群<br>
+                ② <strong>提供证件文件</strong>：游戏版号、商标（与短信签名一致）、软著、入网许可证<br>
+                ③ <strong>主体校验</strong>：确认艺人签署主体与游戏运营主体一致（不一致需走授权流程）<br>
+                <strong>投放前两周</strong>同步信息给助手报备，推进充值流程
+              </div>
+              <div class="mm-callout info" style="margin-top:10px;">
+                💡 每个营销内码速率约 <strong>250万条/小时</strong>，千万级单日任务建议多申请 1-2 个内码
+              </div>
+              <div class="mm-callout warn" style="margin-top:6px;">
+                <strong>📎 需提供给助手的证件文件：</strong>版号、商标、软著、入网许可证扫描件<br>
+                ⚠️ 确认艺人签署主体与游戏运营主体一致，不一致需额外走授权流程！
+              </div>
+            </div>
+            <div class="mm-step">
+              <div class="mm-step-head">
+                <span class="mm-step-num pre-num">3</span>
+                <span class="mm-step-title">证件文件确认</span>
+                <span class="mm-step-ddl">DDL: D-14</span>
+              </div>
+              <div class="mm-step-desc">
+                收集并确认以下资质文件：<strong>游戏版号</strong>、<strong>商标</strong>（与短信签名一致）、<strong>软著</strong>、<strong>入网许可证</strong><br>
+                同步提供给营销短信助手存档
+              </div>
+              <div class="mm-callout danger">
+                <strong>⚠️ 主体校验（前期完成）：</strong>确认艺人签署主体与游戏运营主体一致。不一致需额外走授权流程！
+              </div>
+            </div>
+            <div class="mm-step">
+              <div class="mm-step-head">
+                <span class="mm-step-num pre-num">4</span>
+                <span class="mm-step-title">费用确认</span>
+                <span class="mm-step-ddl">DDL: D-14</span>
+              </div>
+              <div class="mm-step-desc">
+                跟财管确认<strong>费用来源</strong>：市场费用 / 权益下行 / 项目自有<br>
+                走市场费用 → ① <strong>MSH 立项</strong>（获取立项号）→ ② <strong>IVR 平台</strong>申请充值单
+              </div>
+              <div class="mm-callout danger">
+                <strong>⚠️ MSH 立项重要提醒：立项时选择「现金」，不要选「内领」！</strong>
+              </div>
+              <div class="mm-callout warn">
+                <strong>📋 IVR 充值申请参考（实际案例）：</strong>
+                <table class="mm-ref-table" style="margin-top:6px;">
+                  <tr><th style="width:35%">字段</th><th>参考值</th></tr>
+                  <tr><td>申请单号</td><td><span class="mm-copy">QC-20260123-30400</span></td></tr>
+                  <tr><td>申请人</td><td>yukigong</td></tr>
+                  <tr><td>申请部门</td><td>Z1 Studio</td></tr>
+                  <tr><td>成本中心</td><td>Z1 Studio-公共</td></tr>
+                  <tr><td>BG名称</td><td>IEG互动娱乐事业群</td></tr>
+                  <tr><td>资源类型</td><td><strong>企业短信-营销短信</strong></td></tr>
+                  <tr><td>领用科目</td><td><strong>推广费-营销短信</strong></td></tr>
+                  <tr><td>领用金额(元)</td><td><strong>50,000.00</strong></td></tr>
+                  <tr><td>产品结算内码</td><td><span class="mm-copy">-MS2896</span></td></tr>
+                  <tr><td>营销活动单号</td><td><span class="mm-copy">MBA-20260121081899</span>（来自 MSH 立项）</td></tr>
+                  <tr><td>领用产品</td><td>元梦之星-手游APP</td></tr>
+                  <tr><td>领用原因</td><td>元梦之星山海寻灵上线语音外呼需要</td></tr>
+                </table>
+              </div>
+              <div style="margin-top:6px;">
+                <a class="mm-link" href="http://ivr.woa.com" target="_blank">🔗 IVR平台（充值单）</a>
+              </div>
+            </div>
+            <div class="mm-step">
+              <div class="mm-step-head">
+                <span class="mm-step-num pre-num">5</span>
+                <span class="mm-step-title">米大师业务代码</span>
+                <span class="mm-step-ddl">DDL: D-12</span>
+              </div>
+              <div class="mm-step-desc">
+                先问运营是否已有业务代码 → 没有则：<br>
+                ① 申请<strong>结算组</strong>（与财管确认收入主体、发布主体）<br>
+                ② 申请<strong>两个代码</strong>：营销业务代码 + 语音外呼业务代码<br>
+                ③ 语音外呼：业务大类选<strong>「彩信」</strong><br>
+                ④ 命名规范：<span class="mm-copy">BG-游戏名+营销+彩信/短信+部门+自研/代理</span>
+              </div>
+              <div class="mm-callout info">
+                <strong>案例：</strong>业务代码 <span class="mm-copy">-MS2896</span>，名称 IEG-山海寻灵营销短信-天美J1工作室-自研，结算组 山海寻灵(131837)<br>
+                💡 追踪表内可直接填写业务代码号，无需上传文件
+              </div>
+              <div style="margin-top:6px;">
+                <a class="mm-link" href="http://midas.boss.com/toolbox/ServiceCode/apply" target="_blank">🔗 米大师业务代码申请</a>
+                <a class="mm-link" href="http://midas.boss.com/toolbox/ServiceCode/index" target="_blank">🔗 审批查询</a>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- PHASE 2: 中期执行 -->
+        <div class="phase-col">
+          <div class="phase-col-head mid-head" onclick="togglePhase(this)">⚡ 中期执行（D-10 ~ D-2）</div>
+          <div class="phase-col-body">
+            <div class="mm-step">
+              <div class="mm-step-head">
+                <span class="mm-step-num mid-num">6</span>
+                <span class="mm-step-title">立项</span>
+                <span class="mm-step-ddl">DDL: D-10</span>
+              </div>
+              <div class="mm-step-desc">
+                游戏项目立项，选择短信/语音能力<br>
+                市场费用 → <strong>MSH 立项</strong> → IVR 充值
+              </div>
+              <div class="mm-callout danger">
+                <strong>⚠️ MSH 立项选择「现金」，不选「内领」！</strong><br>
+                💡 追踪表内可直接填写 MSH 立项号
+              </div>
+            </div>
+            <div class="mm-step">
+              <div class="mm-step-head">
+                <span class="mm-step-num mid-num">7</span>
+                <span class="mm-step-title">发邮件审批</span>
+                <span class="mm-step-ddl">DDL: D-8</span>
+              </div>
+              <div class="mm-step-desc">
+                发邮件给 <strong>Leader → 公关 → 法务</strong> 审批<br>
+                法务豁免：已在IC平台存有用户授权记录的业务可免法务审批
+              </div>
+              <div style="margin-top:6px;">
+                <a class="mm-link" href="https://doc.weixin.qq.com/doc/w2_AFEAlQbdAFw5NjEcWUFQzWuWXSgjo?scode=AJEAIQdfAAoW2R2w48AFEAlQbdAFw&type=0&ShortLinkId=61cd74a5d395f" target="_blank">🔗 审批邮件文档模板</a>
+              </div>
+            </div>
+            <div class="mm-step">
+              <div class="mm-step-head">
+                <span class="mm-step-num mid-num">8</span>
+                <span class="mm-step-title">语音配置</span>
+                <span class="mm-step-ddl">DDL: D-5 ~ D-2</span>
+              </div>
+              <div class="mm-step-desc">
+                协调艺人档期 → 完成语音录制 → 音频后期 & 质检 → 平台配置触达任务（关联业务代码）→ 上传语音包
+              </div>
+              <div style="margin-top:6px;">
+                <a class="mm-link" href="https://doc.weixin.qq.com/doc/w3_Aa0AQAYUAPsCNwtmJg03iSwu3gWs6?scode=AJEAIQdfAAogu1C3X0AZsA8Ab4ABY" target="_blank">🔗 语音包上传流程文档</a>
+              </div>
+            </div>
+            <div class="mm-step">
+              <div class="mm-step-head">
+                <span class="mm-step-num mid-num">9</span>
+                <span class="mm-step-title">网页号码包投放</span>
+                <span class="mm-step-ddl">DDL: D-2 ~ D-Day</span>
+              </div>
+              <div class="mm-step-desc">
+                IC平台上传号码包 → 圈选人群（<strong>系统圈包</strong> 或 <strong>openid上传</strong>）→ 设置触达任务 → 系统实时校验
+              </div>
+              <div class="mm-callout info">
+                <strong>首次需申请权限：</strong><br>
+                投放权限：盘古申请 → 选【短信投放员】/【数据分析员】<br>
+                业务权限：sms.woa.com → 填项目接口人+业务代码
+              </div>
+              <div style="margin-top:6px;">
+                <a class="mm-link" href="https://gic.woa.com/" target="_blank">🔗 IC平台</a>
+                <a class="mm-link" href="https://iwiki.woa.com/p/4012582868" target="_blank">🔗 IC投放指引Wiki</a>
+                <a class="mm-link" href="https://pangu.woa.com/#/app/authApplication" target="_blank">🔗 盘古权限申请</a>
+                <a class="mm-link" href="https://sms.woa.com/" target="_blank">🔗 通信业务管理平台</a>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- PHASE 3: 后期 -->
+        <div class="phase-col">
+          <div class="phase-col-head post-head" onclick="togglePhase(this)">📊 后期（D-Day 之后）</div>
+          <div class="phase-col-body">
+            <div class="mm-step">
+              <div class="mm-step-head">
+                <span class="mm-step-num post-num">10</span>
+                <span class="mm-step-title">数据回收 & 归档</span>
+                <span class="mm-step-ddl">DDL: D+3 ~ D+7</span>
+              </div>
+              <div class="mm-step-desc">
+                IC平台查看投放数据（到达率/接通率/投诉率）→ 下载成功/失败号码包 → 监测用户反馈 & 投诉处理 → 费用结算确认 → <strong>归档全部资料</strong>（文案、审批记录、证件、数据报告）<br>
+                💡 双方可查阅数据，也可群内沟通助手导出
+              </div>
+              <div style="margin-top:6px;">
+                <a class="mm-link" href="https://gic.woa.com/" target="_blank">🔗 IC平台数据</a>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div><!-- /phase-flow -->
+    </div><!-- /mindmap-body -->
+  </div>
+</div>
+
+<!-- ========== 2. 责任方分工一览 ========== -->
+<div class="mindmap-section" style="padding-top:12px;">
+  <div class="info-module">
+    <div class="info-module-header" onclick="toggleInfoModule(this)">
+      <h2>👥 责任方分工一览</h2>
+      <span class="toggle-icon">▼</span>
+    </div>
+    <div class="info-module-body">
+
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:16px;">
+        <!-- 市场 -->
+        <div style="border:1px solid #bfdbfe;border-radius:10px;overflow:hidden;">
+          <div style="background:linear-gradient(135deg,#3b82f6,#2563eb);color:#fff;padding:12px 16px;font-weight:700;font-size:14px;">🔵 市场负责</div>
+          <div style="padding:14px 16px;">
+            <div style="font-size:12px;color:var(--gray-600);line-height:2;">
+              <div>① 需求发起 & 文案创意 <span class="mm-step-ddl" style="font-size:10px;">D-14</span></div>
+              <div>② 联系营销短信助手 <span class="mm-step-ddl" style="font-size:10px;">D-14</span></div>
+              <div>③ 证件文件确认 <span class="mm-step-ddl" style="font-size:10px;">D-14</span></div>
+              <div>④ 费用确认 <span class="mm-step-ddl" style="font-size:10px;">D-14</span></div>
+              <div>⑥ 立项 <span class="mm-step-ddl" style="font-size:10px;">D-10</span></div>
+              <div>⑦ 发邮件审批 <span class="mm-step-ddl" style="font-size:10px;">D-8</span></div>
+              <div>⑧ 语音录制 & 配置 <span class="mm-step-ddl" style="font-size:10px;">D-5~D-2</span></div>
+            </div>
+          </div>
+        </div>
+        <!-- 运营 -->
+        <div style="border:1px solid #fde68a;border-radius:10px;overflow:hidden;">
+          <div style="background:linear-gradient(135deg,#f59e0b,#d97706);color:#fff;padding:12px 16px;font-weight:700;font-size:14px;">🟡 运营负责</div>
+          <div style="padding:14px 16px;">
+            <div style="font-size:12px;color:var(--gray-600);line-height:2;">
+              <div>⑤ 米大师业务代码 <span class="mm-step-ddl" style="font-size:10px;">D-12</span></div>
+              <div>⑨ 网页号码包投放 <span class="mm-step-ddl" style="font-size:10px;">D-2~D-Day</span></div>
+            </div>
+          </div>
+        </div>
+        <!-- 双方 -->
+        <div style="border:1px solid #a7f3d0;border-radius:10px;overflow:hidden;">
+          <div style="background:linear-gradient(135deg,#10b981,#059669);color:#fff;padding:12px 16px;font-weight:700;font-size:14px;">🟢 双方协作</div>
+          <div style="padding:14px 16px;">
+            <div style="font-size:12px;color:var(--gray-600);line-height:2;">
+              <div>⑩ 数据回收 & 归档 <span class="mm-step-ddl" style="font-size:10px;">D+3~D+7</span></div>
+              <div style="margin-top:4px;font-size:11px;color:var(--gray-500);">💡 双方可查阅数据，也可群内沟通助手导出</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 前期需确认对接人 -->
+      <div style="margin-top:20px;padding:16px;background:linear-gradient(135deg,#f0f9ff,#e0f2fe);border:1px solid #bae6fd;border-radius:10px;">
+        <div style="font-size:14px;font-weight:700;color:#0369a1;margin-bottom:12px;display:flex;align-items:center;gap:6px;">📋 前期需确认项目组对接人</div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:8px;">
+          <div style="background:#fff;border-radius:6px;padding:10px 12px;border:1px solid #e0f2fe;">
+            <div style="font-size:11px;color:var(--gray-500);font-weight:600;">💰 财管</div>
+            <div style="font-size:13px;font-weight:600;color:var(--gray-800);margin-top:2px;">费用来源 & 结算确认</div>
+          </div>
+          <div style="background:#fff;border-radius:6px;padding:10px 12px;border:1px solid #e0f2fe;">
+            <div style="font-size:11px;color:var(--gray-500);font-weight:600;">🧮 财务</div>
+            <div style="font-size:13px;font-weight:600;color:var(--gray-800);margin-top:2px;">充值 & 结算流程</div>
+          </div>
+          <div style="background:#fff;border-radius:6px;padding:10px 12px;border:1px solid #e0f2fe;">
+            <div style="font-size:11px;color:var(--gray-500);font-weight:600;">🎮 运营</div>
+            <div style="font-size:13px;font-weight:600;color:var(--gray-800);margin-top:2px;">业务代码 & 号码包投放</div>
+          </div>
+          <div style="background:#fff;border-radius:6px;padding:10px 12px;border:1px solid #e0f2fe;">
+            <div style="font-size:11px;color:var(--gray-500);font-weight:600;">⚖️ 法务 / 公关</div>
+            <div style="font-size:13px;font-weight:600;color:var(--gray-800);margin-top:2px;">审批 & 合规校验</div>
+          </div>
+          <div style="background:#fff;border-radius:6px;padding:10px 12px;border:1px solid #e0f2fe;">
+            <div style="font-size:11px;color:var(--gray-500);font-weight:600;">🎤 艺人经纪</div>
+            <div style="font-size:13px;font-weight:600;color:var(--gray-800);margin-top:2px;">档期协调 & 语音录制</div>
+          </div>
+        </div>
+        <div class="mm-callout warn" style="margin-top:12px;">
+          <strong>⚠️ 前期务必确认以上各方对接人，拉通项目群同步信息，避免中期因对接人不清晰导致流程卡住！</strong>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- ========== 3. 风险卡点速查 ========== -->
+<div class="mindmap-section" style="padding-top:12px;">
+  <div class="info-module">
+    <div class="info-module-header" onclick="toggleInfoModule(this)">
+      <h2>⚠️ 风险卡点速查</h2>
+      <span class="toggle-icon">▼</span>
+    </div>
+    <div class="info-module-body">
+      <table class="mm-ref-table" style="max-width:700px;">
+        <tr><th style="width:35%">卡点</th><th>应对措施</th></tr>
+        <tr><td>文案反复修改</td><td>设文案锁定 deadline，过期不再修改</td></tr>
+        <tr><td>审批链条长</td><td>提前发起，设自动催办提醒</td></tr>
+        <tr><td>主体不一致</td><td>前期校验艺人签署主体与运营主体，不一致走授权流程</td></tr>
+        <tr><td>MSH选错「内领」</td><td><strong style="color:var(--danger);">必须选「现金」！选错后需重新立项</strong></td></tr>
+        <tr><td>艺人档期冲突</td><td>预留 buffer，提前锁定录制时间</td></tr>
+        <tr><td>对接人不明确</td><td>前期拉通项目群，确认财管/财务/运营/法务/经纪对接人</td></tr>
+        <tr><td>证件文件缺失</td><td>前期 D-14 收齐版号/商标/软著/入网许可证</td></tr>
+      </table>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+  <!-- Stats -->
+  <div class="stats-bar" id="statsBar"></div>
+
+  <!-- Table -->
+  <div class="table-wrap">
+    <div class="table-header">
+      <h2>任务列表</h2>
+      <div class="filter-group">
+        <button class="filter-btn active" data-filter="all" onclick="setFilter('all',this)">全部</button>
+        <button class="filter-btn" data-filter="pending" onclick="setFilter('pending',this)">未开始</button>
+        <button class="filter-btn" data-filter="progress" onclick="setFilter('progress',this)">进行中</button>
+        <button class="filter-btn" data-filter="done" onclick="setFilter('done',this)">已完成</button>
+        <button class="filter-btn" data-filter="blocked" onclick="setFilter('blocked',this)">受阻</button>
+      </div>
+    </div>
+    <div style="overflow-x:auto;">
+      <table>
+        <thead>
+          <tr>
+            <th style="width:40px">#</th>
+            <th>任务名称</th>
+            <th>艺人</th>
+            <th>游戏节点</th>
+            <th>阶段</th>
+            <th>状态</th>
+            <th>进度</th>
+            <th>投放日期</th>
+            <th>附件</th>
+            <th>更新时间</th>
+          </tr>
+        </thead>
+        <tbody id="taskTableBody"></tbody>
+      </table>
+    </div>
+    <div class="empty-state" id="emptyState" style="display:none;">
+      <div class="empty-icon">📋</div>
+      <p>暂无任务，点击「新建呼叫任务」开始</p>
+    </div>
+  </div>
+</div>
+
+<!-- Task Detail Modal -->
+<div class="modal-overlay" id="detailModal">
+  <div class="modal" style="max-width:800px;">
+    <div class="modal-head">
+      <h3 id="detailTitle">任务详情</h3>
+      <button class="modal-close" onclick="closeModal('detailModal')">&times;</button>
+    </div>
+    <div class="modal-body" id="detailBody"></div>
+    <div class="modal-foot" style="justify-content:space-between;">
+      <span class="del-link" onclick="deleteCurrentTask()">删除此任务</span>
+      <div style="display:flex;gap:8px;">
+        <button class="btn btn-ghost" onclick="closeModal('detailModal')">关闭</button>
+        <button class="btn btn-primary" onclick="saveDetail()">保存</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- New Task Modal -->
+<div class="modal-overlay" id="newTaskModal">
+  <div class="modal">
+    <div class="modal-head">
+      <h3>新建呼叫任务</h3>
+      <button class="modal-close" onclick="closeModal('newTaskModal')">&times;</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label>任务名称 *</label>
+        <input id="newName" placeholder="例：元梦之星山海寻灵版本上线-黄子弘凡语音外呼">
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>艺人 *</label>
+          <input id="newArtist" placeholder="例：黄子弘凡">
+        </div>
+        <div class="form-group">
+          <label>游戏节点 *</label>
+          <input id="newNode" placeholder="例：山海寻灵版本上线">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>呼叫形式</label>
+          <select id="newType">
+            <option value="语音外呼">语音外呼</option>
+            <option value="闪信">闪信</option>
+            <option value="语音外呼+闪信">语音外呼 + 闪信</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>计划投放日期</label>
+          <input type="date" id="newDate">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>投放量级</label>
+          <input id="newVolume" placeholder="例：500万">
+        </div>
+        <div class="form-group">
+          <label>费用来源</label>
+          <select id="newFee">
+            <option value="">请选择</option>
+            <option value="市场费用">市场费用（需MSH立项+IVR充值）</option>
+            <option value="权益下行">权益下行</option>
+            <option value="项目自有">项目自有</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>备注</label>
+        <textarea id="newRemark" rows="2" placeholder="任何补充信息..."></textarea>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-ghost" onclick="closeModal('newTaskModal')">取消</button>
+      <button class="btn btn-primary" onclick="createTask()">创建任务</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ========== 企业微信人员名单（可自行维护） ==========
+const WECOM_STAFF = [
+  { id: 'oliviahua', name: '华珂' },
+  { id: 'ayakofeng', name: '冯雅雯' },
+  { id: 'chitaoma', name: '马铭' },
+  { id: 'huiziyang', name: '杨慧' },
+  { id: 'jefreyzhang', name: '章家烨' },
+  { id: 'qiuqiufu', name: '傅真' },
+  { id: 'yukigong', name: '龚雪儿' },
+  { id: 'zchenshuoli', name: '李周晨朔' },
+  // 👆 在此追加更多人员，格式：{ id: '企微ID', name: '中文名' }
+];
+
+// ========== Autocomplete ==========
+let acActiveIdx = -1;
+
+function searchStaff(query) {
+  if (!query) return WECOM_STAFF.slice(0, 8);
+  const q = query.toLowerCase();
+  return WECOM_STAFF.filter(s => s.id.toLowerCase().includes(q) || s.name.includes(q)).slice(0, 8);
+}
+
+function renderAcDrop(dropId, results, onSelect) {
+  const drop = document.getElementById(dropId);
+  if (!drop) return;
+  acActiveIdx = -1;
+  if (results.length === 0) {
+    drop.innerHTML = '<div class="ac-empty">未找到匹配人员</div>';
+  } else {
+    drop.innerHTML = results.map((s, i) =>
+      `<div class="ac-item" data-idx="${i}" onmousedown="event.preventDefault()" onclick="acSelect('${dropId}',${i})">
+        <span class="ac-id">${esc(s.id)}</span><span class="ac-name">${esc(s.name)}</span>
+      </div>`
+    ).join('');
+  }
+  drop.classList.add('show');
+  drop._results = results;
+  drop._onSelect = onSelect;
+}
+
+function hideAcDrop(dropId) {
+  const drop = document.getElementById(dropId);
+  if (drop) { drop.classList.remove('show'); drop.innerHTML = ''; }
+}
+
+function acSelect(dropId, idx) {
+  const drop = document.getElementById(dropId);
+  if (!drop || !drop._results || !drop._results[idx]) return;
+  const item = drop._results[idx];
+  // Find the input sibling
+  const input = drop.parentElement.querySelector('input');
+  if (input) input.value = item.id;
+  hideAcDrop(dropId);
+}
+
+function onAcInput(input, dropId) {
+  const q = input.value.trim();
+  const results = searchStaff(q);
+  renderAcDrop(dropId, results);
+}
+
+function onAcKeydown(e, input, dropId, onSelectCb) {
+  const drop = document.getElementById(dropId);
+  if (!drop || !drop.classList.contains('show') || !drop._results) return;
+  const items = drop.querySelectorAll('.ac-item');
+  if (e.key === 'ArrowDown') {
+    e.preventDefault();
+    acActiveIdx = Math.min(acActiveIdx + 1, items.length - 1);
+    items.forEach((el, i) => el.classList.toggle('active', i === acActiveIdx));
+  } else if (e.key === 'ArrowUp') {
+    e.preventDefault();
+    acActiveIdx = Math.max(acActiveIdx - 1, 0);
+    items.forEach((el, i) => el.classList.toggle('active', i === acActiveIdx));
+  } else if (e.key === 'Enter' && acActiveIdx >= 0 && drop._results[acActiveIdx]) {
+    e.preventDefault();
+    e.stopPropagation();
+    input.value = drop._results[acActiveIdx].id;
+    hideAcDrop(dropId);
+  } else if (e.key === 'Escape') {
+    hideAcDrop(dropId);
+  }
+}
+
+// Close dropdowns on outside click
+document.addEventListener('click', function(e) {
+  document.querySelectorAll('.ac-dropdown.show').forEach(d => {
+    if (!d.parentElement.contains(e.target)) d.classList.remove('show');
+  });
+});
+
+// ========== Auth ==========
+const AUTH_KEY = 'voice_call_auth';
+let currentUser = null;
+
+function checkAuth() {
+  const saved = localStorage.getItem(AUTH_KEY);
+  if (saved) {
+    currentUser = saved;
+    showApp();
+  } else {
+    document.getElementById('loginScreen').style.display = 'flex';
+    document.getElementById('mainApp').style.display = 'none';
+  }
+}
+
+function doLogin() {
+  const name = document.getElementById('loginName').value.trim();
+  if (!name) { toast('请输入企业微信名'); return; }
+  currentUser = name;
+  localStorage.setItem(AUTH_KEY, name);
+  showApp();
+}
+
+function doLogout() {
+  if (!confirm('确定退出登录？')) return;
+  localStorage.removeItem(AUTH_KEY);
+  currentUser = null;
+  document.getElementById('loginScreen').style.display = 'flex';
+  document.getElementById('mainApp').style.display = 'none';
+}
+
+async function showApp() {
+  document.getElementById('loginScreen').style.display = 'none';
+  document.getElementById('mainApp').style.display = 'block';
+  document.getElementById('userAvatar').textContent = currentUser.charAt(0).toUpperCase();
+  document.getElementById('userName').textContent = currentUser;
+  await loadTasks();
+  render();
+}
+
+// ========== Data Model ==========
+const PHASES = [
+  { id:'pre', name:'前期确认', color:'phase-pre' },
+  { id:'mid', name:'中期执行', color:'phase-mid' },
+  { id:'post', name:'后期', color:'phase-post' }
+];
+
+const STEPS = [
+  { id:'s1', phase:'pre', name:'需求发起 & 文案创意', desc:'确定节点、艺人、文案内部过审', ddl:'D-14', canUpload:true, owner:'market' },
+  { id:'s2', phase:'pre', name:'联系营销短信助手', desc:'确认投放时间&量级，提供证件文件，主体校验', ddl:'D-14', canUpload:true, owner:'market' },
+  { id:'s3', phase:'pre', name:'证件文件确认', desc:'版号、商标、软著、入网许可证收集确认，同步给助手', ddl:'D-14', canUpload:true, owner:'market' },
+  { id:'s4', phase:'pre', name:'费用确认', desc:'跟财管确认费用来源；市场费用→MSH立项（⚠️选现金不选内领）→IVR充值单', ddl:'D-14', owner:'market' },
+  { id:'s5', phase:'pre', name:'米大师业务代码', desc:'申请营销业务代码+语音外呼业务代码，同步群里并邮件', ddl:'D-12', textInput:'bizCode', textLabel:'业务代码号', owner:'ops' },
+  { id:'s6', phase:'mid', name:'立项', desc:'游戏项目立项选择短信/语音；MSH立项选现金→IVR充值', ddl:'D-10', textInput:'mshCode', textLabel:'MSH立项号', owner:'market' },
+  { id:'s7', phase:'mid', name:'发邮件审批', desc:'Leader→公关→法务审批', ddl:'D-8', owner:'market' },
+  { id:'s8', phase:'mid', name:'语音配置', desc:'艺人录制、后期处理、上传语音包', ddl:'D-5~D-2', owner:'market' },
+  { id:'s9', phase:'mid', name:'网页号码包投放', desc:'IC平台上传号码包，设置触达任务', ddl:'D-2~D-Day', owner:'ops' },
+  { id:'s10', phase:'post', name:'数据回收 & 归档', desc:'IC平台查看数据、费用结算、归档；双方可查阅或群内沟通助手导出', ddl:'D+3~D+7', owner:'both' }
+];
+
+const UPLOAD_STEPS = new Set(['s1','s2','s3']);
+
+const LINKS = {
+  s2: [{ text:'营销短信助手(tencentSMS)', url:'#', note:'企微: tencentSMS | 工作时间 9:00-17:30' }],
+  s4: [{ text:'IVR平台', url:'http://ivr.woa.com' }],
+  s5: [{ text:'米大师申请', url:'http://midas.boss.com/toolbox/ServiceCode/apply' }, { text:'审批查询', url:'http://midas.boss.com/toolbox/ServiceCode/index' }],
+  s7: [{ text:'审批邮件模板', url:'https://doc.weixin.qq.com/doc/w2_AFEAlQbdAFw5NjEcWUFQzWuWXSgjo?scode=AJEAIQdfAAoW2R2w48AFEAlQbdAFw&type=0&ShortLinkId=61cd74a5d395f' }],
+  s8: [{ text:'语音包上传流程', url:'https://doc.weixin.qq.com/doc/w3_Aa0AQAYUAPsCNwtmJg03iSwu3gWs6?scode=AJEAIQdfAAogu1C3X0AZsA8Ab4ABY' }],
+  s9: [{ text:'IC平台', url:'https://gic.woa.com/' }, { text:'IC投放指引', url:'https://iwiki.woa.com/p/4012582868' }],
+  s10: [{ text:'IC平台数据', url:'https://gic.woa.com/' }]
+};
+
+// ========== Storage (JSONBin.io 云端共享) ==========
+// 部署说明：替换下面两个值即可启用云端同步
+const JSONBIN_BIN_ID = '69e59248aaba88219718d6e4';
+const JSONBIN_API_KEY = '$2a$10$pcKb5wcpYQvcYkHE5jGqk.urgGqZMgE.V6OdSTylU0MO3oWdGAIjO';
+const JSONBIN_BASE = 'https://api.jsonbin.io/v3/b';
+const LOCAL_CACHE_KEY = 'voice_call_cache';
+const LOCAL_FALLBACK_KEY = 'voice_call_tracker_v2';
+
+let allTasks = [];
+let tasks = [];
+let currentTaskId = null;
+let currentFilter = 'all';
+let _saving = false;
+let _pendingSave = false;
+const _isCloudMode = () => JSONBIN_BIN_ID !== 'REPLACE_WITH_YOUR_BIN_ID';
+
+async function loadTasks() {
+  if (!_isCloudMode()) {
+    try { const r = localStorage.getItem(LOCAL_FALLBACK_KEY); allTasks = r ? JSON.parse(r) : []; } catch(e) { allTasks = []; }
+    filterTasksForUser();
+    return;
+  }
+  try { const c = localStorage.getItem(LOCAL_CACHE_KEY); if (c) { allTasks = JSON.parse(c); filterTasksForUser(); render(); } } catch(e) {}
+  try {
+    const resp = await fetch(`${JSONBIN_BASE}/${JSONBIN_BIN_ID}/latest`, {
+      headers: { 'X-Master-Key': JSONBIN_API_KEY, 'X-Bin-Meta': 'false' }
+    });
+    if (resp.ok) {
+      const data = await resp.json();
+      allTasks = Array.isArray(data) ? data.filter(t => t && t.id) : [];
+      localStorage.setItem(LOCAL_CACHE_KEY, JSON.stringify(allTasks));
+    }
+  } catch(e) { console.warn('云端加载失败，使用本地缓存', e); }
+  filterTasksForUser();
+}
+
+async function saveTasks() {
+  filterTasksForUser();
+  localStorage.setItem(LOCAL_CACHE_KEY, JSON.stringify(allTasks));
+  localStorage.setItem(LOCAL_FALLBACK_KEY, JSON.stringify(allTasks));
+  if (!_isCloudMode()) return;
+  if (_saving) { _pendingSave = true; return; }
+  _saving = true;
+  try {
+    await fetch(`${JSONBIN_BASE}/${JSONBIN_BIN_ID}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json', 'X-Master-Key': JSONBIN_API_KEY, 'X-Bin-Versioning': 'false' },
+      body: JSON.stringify(allTasks.length ? allTasks : [{ _empty: true }])
+    });
+  } catch(e) {
+    console.warn('云端保存失败', e);
+  } finally {
+    _saving = false;
+    if (_pendingSave) { _pendingSave = false; saveTasks(); }
+  }
+}
+
+setInterval(() => { if (_isCloudMode() && currentUser) loadTasks().then(() => render()); }, 30000);
+
+function filterTasksForUser() {
+  if (!currentUser) { tasks = []; return; }
+  const u = currentUser.toLowerCase();
+  tasks = allTasks.filter(t => {
+    const owner = (t.owner || '').toLowerCase();
+    const viewers = (t.viewers || []).map(v => v.toLowerCase());
+    return owner === u || viewers.includes(u);
+  });
+}
+
+// ========== Render ==========
+function getPhaseOfTask(task) {
+  const steps = task.steps || {};
+  const preSteps = STEPS.filter(s=>s.phase==='pre');
+  const midSteps = STEPS.filter(s=>s.phase==='mid');
+  const allPre = preSteps.every(s=>steps[s.id]);
+  const allMid = midSteps.every(s=>steps[s.id]);
+  if (allPre && allMid) return PHASES[2];
+  if (allPre) return PHASES[1];
+  return PHASES[0];
+}
+
+function getProgress(task) {
+  const steps = task.steps || {};
+  const done = STEPS.filter(s=>steps[s.id]).length;
+  return { done, total: STEPS.length, pct: Math.round(done/STEPS.length*100) };
+}
+
+function getStatus(task) {
+  if (task.status === 'blocked') return { label:'受阻', cls:'badge-blocked' };
+  const p = getProgress(task);
+  if (p.done === 0) return { label:'未开始', cls:'badge-pending', key:'pending' };
+  if (p.done === p.total) return { label:'已完成', cls:'badge-done', key:'done' };
+  return { label:'进行中', cls:'badge-progress', key:'progress' };
+}
+
+function getStatusKey(task) {
+  if (task.status === 'blocked') return 'blocked';
+  const p = getProgress(task);
+  if (p.done === 0) return 'pending';
+  if (p.done === p.total) return 'done';
+  return 'progress';
+}
+
+function getFileCount(task) {
+  let count = 0;
+  const files = task.files || {};
+  UPLOAD_STEPS.forEach(sid => { if (files[sid]) count += files[sid].length; });
+  return count;
+}
+
+function renderStats() {
+  const total = tasks.length;
+  let progress=0, done=0, blocked=0;
+  tasks.forEach(t => {
+    const k = getStatusKey(t);
+    if(k==='progress') progress++;
+    else if(k==='done') done++;
+    else if(k==='blocked') blocked++;
+  });
+  document.getElementById('statsBar').innerHTML = `
+    <div class="stat-card total"><div class="num">${total}</div><div class="label">全部任务</div></div>
+    <div class="stat-card progress"><div class="num">${progress}</div><div class="label">进行中</div></div>
+    <div class="stat-card done"><div class="num">${done}</div><div class="label">已完成</div></div>
+    <div class="stat-card blocked"><div class="num">${blocked}</div><div class="label">受阻</div></div>
+  `;
+}
+
+function renderTable() {
+  const tbody = document.getElementById('taskTableBody');
+  const empty = document.getElementById('emptyState');
+  let filtered = tasks;
+  if (currentFilter !== 'all') {
+    filtered = tasks.filter(t => getStatusKey(t) === currentFilter);
+  }
+  if (filtered.length === 0) {
+    tbody.innerHTML = '';
+    empty.style.display = 'block';
+    return;
+  }
+  empty.style.display = 'none';
+  tbody.innerHTML = filtered.map((t, i) => {
+    const phase = getPhaseOfTask(t);
+    const status = getStatus(t);
+    const prog = getProgress(t);
+    const fc = getFileCount(t);
+    const colors = { 0:'var(--gray-400)', 25:'var(--danger)', 50:'var(--warning)', 75:'var(--primary)', 100:'var(--success)' };
+    const colorKey = prog.pct >= 100 ? 100 : prog.pct >= 75 ? 75 : prog.pct >= 50 ? 50 : prog.pct >= 25 ? 25 : 0;
+    const isViewer = t.owner && t.owner.toLowerCase() !== currentUser.toLowerCase();
+    const viewerBadge = isViewer ? '<span style="font-size:10px;color:var(--gray-400);background:var(--gray-100);padding:1px 6px;border-radius:8px;margin-left:6px;">查阅</span>' : '';
+    return `<tr onclick="openDetail('${t.id}')">
+      <td style="color:var(--gray-400)">${i+1}</td>
+      <td><strong>${esc(t.name)}</strong>${viewerBadge}<br><span style="font-size:11px;color:var(--gray-400)">${esc(t.type||'语音外呼')}</span></td>
+      <td>${esc(t.artist)}</td>
+      <td>${esc(t.node)}</td>
+      <td><span class="phase-tag ${phase.color}">${phase.name}</span></td>
+      <td><span class="badge ${status.cls}">${status.label}</span></td>
+      <td style="min-width:100px">
+        <div style="display:flex;align-items:center;gap:6px;">
+          <div class="progress-bar" style="flex:1"><div class="progress-fill" style="width:${prog.pct}%;background:${colors[colorKey]}"></div></div>
+          <span style="font-size:11px;color:var(--gray-400)">${prog.done}/${prog.total}</span>
+        </div>
+      </td>
+      <td style="white-space:nowrap">${t.date || '—'}</td>
+      <td><span class="file-count"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>${fc}</span></td>
+      <td style="font-size:11px;color:var(--gray-400);white-space:nowrap">${t.updated || '—'}</td>
+    </tr>`;
+  }).join('');
+}
+
+function render() {
+  renderStats();
+  renderTable();
+}
+
+// ========== Filter ==========
+function setFilter(f, el) {
+  currentFilter = f;
+  document.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('active'));
+  el.classList.add('active');
+  renderTable();
+}
+
+// ========== New Task ==========
+function openNewTask() {
+  document.getElementById('newName').value = '';
+  document.getElementById('newArtist').value = '';
+  document.getElementById('newNode').value = '';
+  document.getElementById('newDate').value = '';
+  document.getElementById('newVolume').value = '';
+  document.getElementById('newFee').value = '';
+  document.getElementById('newRemark').value = '';
+  openModal('newTaskModal');
+}
+
+function createTask() {
+  const name = document.getElementById('newName').value.trim();
+  const artist = document.getElementById('newArtist').value.trim();
+  const node = document.getElementById('newNode').value.trim();
+  if (!name || !artist || !node) { toast('请填写任务名称、艺人和游戏节点'); return; }
+  const task = {
+    id: 'T' + Date.now(),
+    name, artist, node,
+    type: document.getElementById('newType').value,
+    date: document.getElementById('newDate').value,
+    volume: document.getElementById('newVolume').value.trim(),
+    fee: document.getElementById('newFee').value,
+    remark: document.getElementById('newRemark').value.trim(),
+    steps: {},
+    files: {},
+    notes: [],
+    textInputs: {},
+    status: 'active',
+    owner: currentUser,
+    viewers: [],
+    created: new Date().toLocaleDateString('zh-CN'),
+    updated: new Date().toLocaleDateString('zh-CN')
+  };
+  allTasks.unshift(task);
+  saveTasks();
+  render();
+  closeModal('newTaskModal');
+  toast('✅ 任务创建成功');
+}
+
+// ========== Key Info Summary ==========
+function renderKeyInfo(t) {
+  const ti = t.textInputs || {};
+  const items = [
+    { label: '发起人', value: t.owner },
+    { label: '艺人', value: t.artist },
+    { label: '游戏节点', value: t.node },
+    { label: '呼叫形式', value: t.type },
+    { label: '投放日期', value: t.date },
+    { label: '投放量级', value: t.volume },
+    { label: '费用来源', value: t.fee },
+    { label: '米大师业务代码', value: ti.bizCode },
+    { label: 'MSH立项号', value: ti.mshCode },
+    { label: '创建时间', value: t.created },
+  ];
+  if (t.remark) {
+    items.push({ label: '备注', value: t.remark });
+  }
+  const grid = items.map(item => {
+    const val = item.value || '';
+    const cls = val ? '' : ' empty';
+    return `<div class="key-info-item"><div class="ki-label">${item.label}</div><div class="ki-value${cls}">${val ? esc(val) : '未填写'}</div></div>`;
+  }).join('');
+
+  return `<div class="key-info-summary">
+    <h4>📌 关键信息速查</h4>
+    <div class="key-info-grid">${grid}</div>
+  </div>`;
+}
+
+// ========== Viewers Management ==========
+function renderViewers(t) {
+  const isOwner = t.owner && t.owner.toLowerCase() === currentUser.toLowerCase();
+  const viewers = t.viewers || [];
+
+  let viewerTags = `<div class="viewer-tag"><span>👤 ${esc(t.owner || '未知')}</span><span class="owner-badge">发起人</span></div>`;
+  viewers.forEach((v, i) => {
+    const removeBtn = isOwner ? `<span class="vt-remove" onclick="removeViewer(${i})">&times;</span>` : '';
+    viewerTags += `<div class="viewer-tag"><span>👁️ ${esc(v)}</span>${removeBtn}</div>`;
+  });
+
+  const addRow = isOwner ? `<div class="viewer-add-row ac-wrapper">
+    <input id="viewerInput" placeholder="输入企业微信名添加查阅者..." autocomplete="off" oninput="onAcInput(this,'viewerAcDrop')" onkeydown="onAcKeydown(event,this,'viewerAcDrop',function(v){document.getElementById('viewerInput').value=v;hideAcDrop('viewerAcDrop')});if(event.key==='Enter'&&!document.querySelector('#viewerAcDrop.show'))addViewer()" onfocus="onAcInput(this,'viewerAcDrop')">
+    <div class="ac-dropdown" id="viewerAcDrop"></div>
+    <button class="btn btn-primary btn-sm" onclick="addViewer()">添加</button>
+  </div>` : '<div style="font-size:12px;color:var(--gray-400);">只有发起人可以管理查阅者</div>';
+
+  return `<div class="viewers-section">
+    <h4>👥 项目权限</h4>
+    <div class="viewer-list">${viewerTags}</div>
+    ${addRow}
+  </div>`;
+}
+
+function addViewer() {
+  const input = document.getElementById('viewerInput');
+  const name = input.value.trim();
+  if (!name) return;
+  const t = allTasks.find(x=>x.id===currentTaskId);
+  if (!t) return;
+  if (t.owner && t.owner.toLowerCase() !== currentUser.toLowerCase()) {
+    toast('只有发起人可以添加查阅者'); return;
+  }
+  if (!t.viewers) t.viewers = [];
+  if (name.toLowerCase() === t.owner.toLowerCase()) { toast('发起人已自动拥有权限'); input.value=''; return; }
+  if (t.viewers.some(v => v.toLowerCase() === name.toLowerCase())) { toast('该用户已在查阅列表中'); input.value=''; return; }
+  t.viewers.push(name);
+  t.updated = new Date().toLocaleDateString('zh-CN');
+  saveTasks();
+  input.value = '';
+  openDetail(currentTaskId);
+  toast(`✅ 已添加查阅者：${name}`);
+}
+
+function removeViewer(idx) {
+  const t = allTasks.find(x=>x.id===currentTaskId);
+  if (!t || !t.viewers) return;
+  if (t.owner && t.owner.toLowerCase() !== currentUser.toLowerCase()) {
+    toast('只有发起人可以移除查阅者'); return;
+  }
+  const removed = t.viewers.splice(idx, 1)[0];
+  t.updated = new Date().toLocaleDateString('zh-CN');
+  saveTasks();
+  openDetail(currentTaskId);
+  toast(`已移除查阅者：${removed}`);
+}
+
+// ========== Detail Modal ==========
+function openDetail(id) {
+  currentTaskId = id;
+  const t = allTasks.find(x=>x.id===id);
+  if (!t) return;
+  
+  const isOwner = t.owner && t.owner.toLowerCase() === currentUser.toLowerCase();
+  const isViewerOnly = !isOwner;
+  const ro = isViewerOnly ? 'disabled' : '';
+
+  document.getElementById('detailTitle').textContent = t.name;
+
+  let html = '';
+
+  // Key Info Summary (always at top)
+  html += renderKeyInfo(t);
+
+  // Viewers section
+  html += renderViewers(t);
+
+  // Basic info
+  html += `<div style="margin-top:16px;"><h4 style="font-size:14px;font-weight:600;margin-bottom:12px;color:var(--gray-700);">📝 基本信息</h4></div>`;
+  html += `<div class="form-row">
+    <div class="form-group"><label>艺人</label><input id="dArtist" value="${esc(t.artist)}" ${ro}></div>
+    <div class="form-group"><label>游戏节点</label><input id="dNode" value="${esc(t.node)}" ${ro}></div>
+  </div>
+  <div class="form-row">
+    <div class="form-group"><label>呼叫形式</label>
+      <select id="dType" ${ro}>
+        <option ${t.type==='语音外呼'?'selected':''}>语音外呼</option>
+        <option ${t.type==='闪信'?'selected':''}>闪信</option>
+        <option ${t.type==='语音外呼+闪信'?'selected':''}>语音外呼+闪信</option>
+      </select>
+    </div>
+    <div class="form-group"><label>投放日期</label><input type="date" id="dDate" value="${t.date||''}" ${ro}></div>
+  </div>
+  <div class="form-row">
+    <div class="form-group"><label>投放量级</label><input id="dVolume" value="${esc(t.volume||'')}" ${ro}></div>
+    <div class="form-group"><label>费用来源</label>
+      <select id="dFee" ${ro}>
+        <option value="">请选择</option>
+        <option value="市场费用" ${t.fee==='市场费用'?'selected':''}>市场费用（需MSH立项+IVR充值）</option>
+        <option value="权益下行" ${t.fee==='权益下行'?'selected':''}>权益下行</option>
+        <option value="项目自有" ${t.fee==='项目自有'?'selected':''}>项目自有</option>
+      </select>
+    </div>
+  </div>
+  <div class="form-group">
+    <label>状态</label>
+    <select id="dStatus" ${ro}>
+      <option value="active" ${t.status!=='blocked'?'selected':''}>正常</option>
+      <option value="blocked" ${t.status==='blocked'?'selected':''}>受阻</option>
+    </select>
+  </div>`;
+
+  // Steps grouped by phase
+  html += `<div class="steps-section"><h4>📋 流程环节</h4>`;
+  PHASES.forEach(ph => {
+    html += `<div style="margin-bottom:12px;"><div style="font-size:12px;font-weight:600;color:var(--gray-500);margin-bottom:6px;text-transform:uppercase"><span class="phase-tag ${ph.color}">${ph.name}</span></div>`;
+    STEPS.filter(s=>s.phase===ph.id).forEach(s => {
+      const checked = t.steps[s.id] ? 'checked' : '';
+      const doneText = t.steps[s.id] ? 'done-text' : '';
+      let linksHtml = '';
+      if (LINKS[s.id]) {
+        linksHtml = '<div class="link-list" style="margin-top:4px;">' + LINKS[s.id].map(l => {
+          if (l.note) return `<span style="font-size:12px;color:var(--gray-500);">📱 ${l.note}</span>`;
+          return `<a href="${l.url}" target="_blank" onclick="event.stopPropagation()">🔗 ${l.text}</a>`;
+        }).join('') + '</div>';
+      }
+      const stepFiles = (t.files && t.files[s.id]) || [];
+      const fileHint = (UPLOAD_STEPS.has(s.id) && stepFiles.length > 0) ? `<span style="font-size:11px;color:var(--primary);margin-left:6px;">📎 ${stepFiles.length}个文件</span>` : '';
+      let textInputHtml = '';
+      if (s.textInput) {
+        const val = (t.textInputs && t.textInputs[s.textInput]) || '';
+        textInputHtml = `<div style="margin-top:6px;"><label style="font-size:11px;font-weight:600;color:var(--gray-600);">${s.textLabel}</label><input class="step-text-input" data-key="${s.textInput}" value="${esc(val)}" placeholder="填写${s.textLabel}..." style="width:100%;padding:4px 8px;border:1px solid var(--gray-300);border-radius:4px;font-size:12px;margin-top:2px;" onchange="saveTextInput('${s.textInput}',this.value)" ${ro}></div>`;
+      }
+
+      const stepClickHandler = isViewerOnly ? '' : `onclick="toggleStep('${s.id}',this)"`;
+      const checkCursor = isViewerOnly ? 'style="cursor:default;opacity:.6;"' : '';
+
+      html += `<div class="step-item">
+        <div class="step-check ${checked}" ${stepClickHandler} ${checkCursor}></div>
+        <div class="step-body">
+          <div class="step-name ${doneText}">${s.name}${fileHint}${s.ddl ? ' <span style=\"font-size:10px;color:var(--danger);background:var(--danger-light);padding:1px 6px;border-radius:8px;margin-left:6px;\">'+s.ddl+'</span>' : ''}</div>
+          <div class="step-desc">${s.desc}</div>
+          ${linksHtml}
+          ${textInputHtml}
+        </div>
+      </div>`;
+    });
+    html += `</div>`;
+  });
+  html += `</div>`;
+
+  // File upload (only for owner)
+  if (isOwner) {
+    const uploadableSteps = STEPS.filter(s => UPLOAD_STEPS.has(s.id));
+    html += `<div class="file-section"><h4>📁 文件存档（创意文案 / 证件）</h4>
+      <div style="margin-bottom:10px;">
+        <button class="btn btn-ghost btn-sm" onclick="downloadTemplate()" style="font-size:12px;">📄 下载创意文案模板</button>
+      </div>
+      <div class="form-group"><label>选择环节上传</label>
+        <select id="fileStepSelect">
+          ${uploadableSteps.map(s=>`<option value="${s.id}">${s.name}</option>`).join('')}
+        </select>
+        <div class="form-hint">「文案创意」「联系营销短信助手」「证件文件确认」支持文件上传</div>
+      </div>
+      <div class="upload-zone" id="uploadZone" onclick="document.getElementById('fileInput').click()" 
+           ondragover="event.preventDefault();this.classList.add('dragover')" 
+           ondragleave="this.classList.remove('dragover')"
+           ondrop="handleDrop(event)">
+        <div class="upload-icon">📤</div>
+        <p>点击上传或拖拽文件到此处<br><span style="font-size:11px;color:var(--gray-400)">支持所有文件类型，文件存储在浏览器本地</span></p>
+        <input type="file" id="fileInput" multiple onchange="handleFileSelect(event)">
+      </div>
+      <div id="allFilesList"></div>
+    </div>`;
+  } else {
+    // Viewer can see files but not upload
+    html += `<div class="file-section"><h4>📁 文件存档（只读）</h4><div id="allFilesList"></div></div>`;
+  }
+
+  // Notes
+  html += `<div class="notes-section"><h4>💬 备注记录</h4>`;
+  if (isOwner) {
+    html += `<div class="note-input-row">
+      <input id="noteInput" placeholder="添加备注..." onkeydown="if(event.key==='Enter')addNote()">
+      <button class="btn btn-primary btn-sm" onclick="addNote()">添加</button>
+    </div>`;
+  }
+  html += `<div id="notesList" style="margin-top:8px;">
+      ${(t.notes||[]).map((n,i)=>{
+        const del = isOwner ? `<span style="cursor:pointer;color:var(--danger);margin-left:8px;" onclick="removeNote(${i})">删除</span>` : '';
+        return `<div class="note-entry"><div class="note-time">${n.time} ${del}</div><div class="note-text">${esc(n.text)}</div></div>`;
+      }).join('')}
+    </div>
+  </div>`;
+
+  document.getElementById('detailBody').innerHTML = html;
+  renderAllFiles();
+
+  // Update footer buttons based on permission
+  const foot = document.querySelector('#detailModal .modal-foot');
+  if (isViewerOnly) {
+    foot.innerHTML = `<button class="btn btn-ghost" onclick="closeModal('detailModal')">关闭</button>`;
+  } else {
+    foot.innerHTML = `<span class="del-link" onclick="deleteCurrentTask()">删除此任务</span>
+      <div style="display:flex;gap:8px;">
+        <button class="btn btn-ghost" onclick="closeModal('detailModal')">关闭</button>
+        <button class="btn btn-primary" onclick="saveDetail()">保存</button>
+      </div>`;
+    foot.style.justifyContent = 'space-between';
+  }
+
+  openModal('detailModal');
+}
+
+function toggleStep(stepId, el) {
+  const t = allTasks.find(x=>x.id===currentTaskId);
+  if (!t) return;
+  if (t.owner && t.owner.toLowerCase() !== currentUser.toLowerCase()) return;
+  if (!t.steps) t.steps = {};
+  t.steps[stepId] = !t.steps[stepId];
+  el.classList.toggle('checked');
+  const nameEl = el.nextElementSibling.querySelector('.step-name');
+  nameEl.classList.toggle('done-text');
+  t.updated = new Date().toLocaleDateString('zh-CN');
+  saveTasks();
+  render();
+}
+
+function saveDetail() {
+  const t = allTasks.find(x=>x.id===currentTaskId);
+  if (!t) return;
+  if (t.owner && t.owner.toLowerCase() !== currentUser.toLowerCase()) {
+    toast('查阅者无法编辑'); return;
+  }
+  t.artist = document.getElementById('dArtist').value.trim();
+  t.node = document.getElementById('dNode').value.trim();
+  t.type = document.getElementById('dType').value;
+  t.date = document.getElementById('dDate').value;
+  t.volume = document.getElementById('dVolume').value.trim();
+  t.fee = document.getElementById('dFee').value;
+  t.status = document.getElementById('dStatus').value;
+  if (!t.textInputs) t.textInputs = {};
+  document.querySelectorAll('.step-text-input').forEach(inp => {
+    t.textInputs[inp.dataset.key] = inp.value.trim();
+  });
+  t.updated = new Date().toLocaleDateString('zh-CN');
+  saveTasks();
+  render();
+  closeModal('detailModal');
+  toast('✅ 已保存');
+}
+
+function saveTextInput(key, val) {
+  const t = allTasks.find(x=>x.id===currentTaskId);
+  if (!t) return;
+  if (!t.textInputs) t.textInputs = {};
+  t.textInputs[key] = val.trim();
+  t.updated = new Date().toLocaleDateString('zh-CN');
+  saveTasks();
+}
+
+function downloadTemplate() {
+  const csv = '\uFEFF艺人,语音条数,语音类型,闪信文案,挂机文案,备注\n' +
+    '黄子弘凡,2,语音外呼,【元梦之星】黄子弘凡给你来电啦！注意接听,听说黄子弘凡给你来电了？点击跳转我们在元梦之星-山海寻灵等你：【官网链接】,案例参考\n' +
+    ',,闪信,,\n';
+  const blob = new Blob([csv], {type:'text/csv;charset=utf-8;'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = '语音外呼创意文案模板.csv';
+  a.click();
+  URL.revokeObjectURL(url);
+  toast('📄 模板已下载');
+}
+
+function deleteCurrentTask() {
+  const t = allTasks.find(x=>x.id===currentTaskId);
+  if (!t) return;
+  if (t.owner && t.owner.toLowerCase() !== currentUser.toLowerCase()) {
+    toast('只有发起人可以删除任务'); return;
+  }
+  if (!confirm('确定要删除这个任务吗？')) return;
+  allTasks = allTasks.filter(t=>t.id!==currentTaskId);
+  saveTasks();
+  render();
+  closeModal('detailModal');
+  toast('已删除');
+}
+
+// ========== File Handling ==========
+function handleFileSelect(e) {
+  const files = Array.from(e.target.files);
+  processFiles(files);
+  e.target.value = '';
+}
+
+function handleDrop(e) {
+  e.preventDefault();
+  document.getElementById('uploadZone').classList.remove('dragover');
+  const files = Array.from(e.dataTransfer.files);
+  processFiles(files);
+}
+
+function processFiles(fileList) {
+  const t = allTasks.find(x=>x.id===currentTaskId);
+  if (!t) return;
+  const stepId = document.getElementById('fileStepSelect').value;
+  if (!t.files) t.files = {};
+  if (!t.files[stepId]) t.files[stepId] = [];
+
+  let processed = 0;
+  fileList.forEach(file => {
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      t.files[stepId].push({
+        name: file.name,
+        size: file.size,
+        type: file.type,
+        data: e.target.result,
+        date: new Date().toLocaleDateString('zh-CN') + ' ' + new Date().toLocaleTimeString('zh-CN', {hour:'2-digit',minute:'2-digit'})
+      });
+      processed++;
+      if (processed === fileList.length) {
+        t.updated = new Date().toLocaleDateString('zh-CN');
+        saveTasks();
+        renderAllFiles();
+        render();
+        toast(`✅ ${processed}个文件已上传到「${STEPS.find(s=>s.id===stepId).name}」`);
+      }
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
+function renderAllFiles() {
+  const t = allTasks.find(x=>x.id===currentTaskId);
+  const el = document.getElementById('allFilesList');
+  if (!el) return;
+  if (!t || !t.files) { el.innerHTML=''; return; }
+  const isOwner = t.owner && t.owner.toLowerCase() === currentUser.toLowerCase();
+  let html = '';
+  STEPS.filter(s => UPLOAD_STEPS.has(s.id)).forEach(s => {
+    const files = t.files[s.id] || [];
+    if (files.length === 0) return;
+    html += `<div style="margin-top:10px;"><div style="font-size:12px;font-weight:600;color:var(--gray-600);margin-bottom:4px;">📌 ${s.name}</div>`;
+    files.forEach((f, i) => {
+      const icon = getFileIcon(f.name);
+      const size = formatSize(f.size);
+      const removeBtn = isOwner ? `<button class="fremove" onclick="removeFile('${s.id}',${i})">&times;</button>` : '';
+      html += `<div class="file-item">
+        <span class="file-icon">${icon}</span>
+        <span class="fname" title="${esc(f.name)}">${esc(f.name)}</span>
+        <span class="fsize">${size}</span>
+        <span class="fdate">${f.date}</span>
+        <a class="btn btn-sm btn-ghost" style="padding:2px 6px;font-size:11px;text-decoration:none;" onclick="downloadFile('${s.id}',${i})">下载</a>
+        ${removeBtn}
+      </div>`;
+    });
+    html += `</div>`;
+  });
+  el.innerHTML = html;
+}
+
+function removeFile(stepId, idx) {
+  const t = allTasks.find(x=>x.id===currentTaskId);
+  if (!t || !t.files || !t.files[stepId]) return;
+  t.files[stepId].splice(idx, 1);
+  t.updated = new Date().toLocaleDateString('zh-CN');
+  saveTasks();
+  renderAllFiles();
+  render();
+}
+
+function downloadFile(stepId, idx) {
+  const t = allTasks.find(x=>x.id===currentTaskId);
+  if (!t || !t.files || !t.files[stepId]) return;
+  const f = t.files[stepId][idx];
+  const a = document.createElement('a');
+  a.href = f.data;
+  a.download = f.name;
+  a.click();
+}
+
+function getFileIcon(name) {
+  const ext = name.split('.').pop().toLowerCase();
+  const icons = {
+    pdf:'📕', doc:'📘', docx:'📘', xls:'📗', xlsx:'📗',
+    ppt:'📙', pptx:'📙', png:'🖼️', jpg:'🖼️', jpeg:'🖼️', gif:'🖼️',
+    mp3:'🎵', wav:'🎵', mp4:'🎬', mov:'🎬', zip:'📦', rar:'📦',
+    txt:'📄', csv:'📄', json:'📄'
+  };
+  return icons[ext] || '📎';
+}
+
+function formatSize(bytes) {
+  if (bytes < 1024) return bytes + ' B';
+  if (bytes < 1024*1024) return (bytes/1024).toFixed(1) + ' KB';
+  return (bytes/1024/1024).toFixed(1) + ' MB';
+}
+
+// ========== Notes ==========
+function addNote() {
+  const input = document.getElementById('noteInput');
+  const text = input.value.trim();
+  if (!text) return;
+  const t = allTasks.find(x=>x.id===currentTaskId);
+  if (!t) return;
+  if (!t.notes) t.notes = [];
+  t.notes.unshift({ text, time: new Date().toLocaleDateString('zh-CN') + ' ' + new Date().toLocaleTimeString('zh-CN', {hour:'2-digit',minute:'2-digit'}) });
+  input.value = '';
+  t.updated = new Date().toLocaleDateString('zh-CN');
+  saveTasks();
+  const notesList = document.getElementById('notesList');
+  notesList.innerHTML = t.notes.map((n,i)=>`<div class="note-entry"><div class="note-time">${n.time} <span style="cursor:pointer;color:var(--danger);margin-left:8px;" onclick="removeNote(${i})">删除</span></div><div class="note-text">${esc(n.text)}</div></div>`).join('');
+}
+
+function removeNote(idx) {
+  const t = allTasks.find(x=>x.id===currentTaskId);
+  if (!t || !t.notes) return;
+  t.notes.splice(idx, 1);
+  saveTasks();
+  const notesList = document.getElementById('notesList');
+  notesList.innerHTML = t.notes.map((n,i)=>`<div class="note-entry"><div class="note-time">${n.time} <span style="cursor:pointer;color:var(--danger);margin-left:8px;" onclick="removeNote(${i})">删除</span></div><div class="note-text">${esc(n.text)}</div></div>`).join('');
+}
+
+
+
+// ========== Modal ==========
+function openModal(id) { document.getElementById(id).classList.add('show'); }
+function closeModal(id) { document.getElementById(id).classList.remove('show'); }
+
+// ========== Utils ==========
+function esc(s) { if (!s) return ''; const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+
+function toast(msg) {
+  const el = document.createElement('div');
+  el.className = 'toast';
+  el.textContent = msg;
+  document.body.appendChild(el);
+  setTimeout(()=>el.remove(), 2500);
+}
+
+// ========== Init ==========
+checkAuth();
+
+// Close modal on overlay click
+document.querySelectorAll('.modal-overlay').forEach(overlay => {
+  overlay.addEventListener('click', e => {
+    if (e.target === overlay) overlay.classList.remove('show');
+  });
+});
+
+// ========== Mindmap Toggle ==========
+function toggleMindmap() {
+  const body = document.getElementById('mmBody');
+  const icon = document.getElementById('mmToggleIcon');
+  body.classList.toggle('open');
+  icon.classList.toggle('open');
+}
+
+function togglePhase(headEl) {
+  headEl.classList.toggle('phase-open');
+  const body = headEl.nextElementSibling;
+  body.classList.toggle('phase-body-open');
+}
+
+function toggleInfoModule(headerEl) {
+  const body = headerEl.nextElementSibling;
+  const icon = headerEl.querySelector('.toggle-icon');
+  body.classList.toggle('open');
+  icon.classList.toggle('open');
+}
+</script>
+</div><!-- /mainApp -->
+</body>
+</html>
