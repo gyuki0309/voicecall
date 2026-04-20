@@ -313,6 +313,13 @@
   /* Delete link */
   .del-link { font-size: 12px; color: var(--gray-400); cursor: pointer; text-decoration: underline; text-underline-offset: 2px; transition: color .15s; }
   .del-link:hover { color: var(--danger); }
+
+  /* Collapsible detail block */
+  .collapse-toggle { cursor: pointer; user-select: none; display: flex; align-items: center; gap: 6px; }
+  .collapse-toggle::before { content: '▶'; font-size: 10px; transition: transform .25s; color: var(--gray-400); flex-shrink: 0; }
+  .collapse-toggle.open::before { transform: rotate(90deg); }
+  .collapse-body { max-height: 0; overflow: hidden; transition: max-height .35s ease; }
+  .collapse-body.open { max-height: 3000px; }
 </style>
 </head>
 <body>
@@ -505,23 +512,27 @@
               <div class="mm-callout danger">
                 <strong>⚠️ MSH 立项重要提醒：立项时选择「现金」，不要选「内领」！</strong>
               </div>
-              <div class="mm-callout warn">
-                <strong>📋 IVR 充值申请参考（实际案例）：</strong>
-                <table class="mm-ref-table" style="margin-top:6px;">
-                  <tr><th style="width:35%">字段</th><th>参考值</th></tr>
-                  <tr><td>申请单号</td><td><span class="mm-copy">QC-20260123-30400</span></td></tr>
-                  <tr><td>申请人</td><td>yukigong</td></tr>
-                  <tr><td>申请部门</td><td>Z1 Studio</td></tr>
-                  <tr><td>成本中心</td><td>Z1 Studio-公共</td></tr>
-                  <tr><td>BG名称</td><td>IEG互动娱乐事业群</td></tr>
-                  <tr><td>资源类型</td><td><strong>企业短信-营销短信</strong></td></tr>
-                  <tr><td>领用科目</td><td><strong>推广费-营销短信</strong></td></tr>
-                  <tr><td>领用金额(元)</td><td><strong>50,000.00</strong></td></tr>
-                  <tr><td>产品结算内码</td><td><span class="mm-copy">-MS2896</span></td></tr>
-                  <tr><td>营销活动单号</td><td><span class="mm-copy">MBA-20260121081899</span>（来自 MSH 立项）</td></tr>
-                  <tr><td>领用产品</td><td>元梦之星-手游APP</td></tr>
-                  <tr><td>领用原因</td><td>元梦之星山海寻灵上线语音外呼需要</td></tr>
-                </table>
+              <div class="mm-callout warn" style="padding-bottom:4px;">
+                <div class="collapse-toggle" onclick="this.classList.toggle('open');this.nextElementSibling.classList.toggle('open')">
+                  <strong>📋 IVR 充值申请参考（实际案例）</strong>
+                </div>
+                <div class="collapse-body">
+                  <table class="mm-ref-table" style="margin-top:6px;">
+                    <tr><th style="width:35%">字段</th><th>参考值</th></tr>
+                    <tr><td>申请单号</td><td><span class="mm-copy">QC-20260123-30400</span></td></tr>
+                    <tr><td>申请人</td><td>yukigong</td></tr>
+                    <tr><td>申请部门</td><td>Z1 Studio</td></tr>
+                    <tr><td>成本中心</td><td>Z1 Studio-公共</td></tr>
+                    <tr><td>BG名称</td><td>IEG互动娱乐事业群</td></tr>
+                    <tr><td>资源类型</td><td><strong>企业短信-营销短信</strong></td></tr>
+                    <tr><td>领用科目</td><td><strong>推广费-营销短信</strong></td></tr>
+                    <tr><td>领用金额(元)</td><td><strong>50,000.00</strong></td></tr>
+                    <tr><td>产品结算内码</td><td><span class="mm-copy">-MS2896</span></td></tr>
+                    <tr><td>营销活动单号</td><td><span class="mm-copy">MBA-20260121081899</span>（来自 MSH 立项）</td></tr>
+                    <tr><td>领用产品</td><td>元梦之星-手游APP</td></tr>
+                    <tr><td>领用原因</td><td>元梦之星山海寻灵上线语音外呼需要</td></tr>
+                  </table>
+                </div>
               </div>
               <div style="margin-top:6px;">
                 <a class="mm-link" href="http://ivr.woa.com" target="_blank">🔗 IVR平台（充值单）</a>
@@ -545,7 +556,7 @@
             <div class="mm-step">
               <div class="mm-step-head">
                 <span class="mm-step-num mid-num">7</span>
-                <span class="mm-step-title">语音配置</span>
+                <span class="mm-step-title">语音录制</span>
                 <span class="mm-step-ddl">DDL: D-5 ~ D-2</span>
               </div>
               <div class="mm-step-desc">
@@ -566,20 +577,24 @@
 
               <!-- 第一段：语音包（助手完成） -->
               <div style="margin-top:10px;padding:12px 14px;background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;">
-                <div style="font-size:13px;font-weight:700;color:#1e40af;margin-bottom:6px;">📦 语音包投放（由营销短信助手完成）</div>
-                <div class="mm-step-desc" style="margin-top:0;">
-                  IC平台上传语音包 → 圈选人群（<strong>系统圈包</strong> 或 <strong>openid上传</strong>）→ 设置触达任务 → 系统实时校验
+                <div class="collapse-toggle" onclick="this.classList.toggle('open');this.nextElementSibling.classList.toggle('open')" style="font-size:13px;font-weight:700;color:#1e40af;">
+                  📦 语音包投放（由营销短信助手完成）
                 </div>
-                <div class="mm-callout info" style="margin-top:8px;">
-                  <strong>首次需申请权限：</strong><br>
-                  投放权限：盘古申请 → 选【短信投放员】/【数据分析员】<br>
-                  业务权限：sms.woa.com → 填项目接口人+业务代码
-                </div>
-                <div style="margin-top:6px;">
-                  <a class="mm-link" href="https://gic.woa.com/" target="_blank">🔗 IC平台</a>
-                  <a class="mm-link" href="https://iwiki.woa.com/p/4012582868" target="_blank">🔗 IC投放指引Wiki</a>
-                  <a class="mm-link" href="https://pangu.woa.com/#/app/authApplication" target="_blank">🔗 盘古权限申请</a>
-                  <a class="mm-link" href="https://sms.woa.com/" target="_blank">🔗 通信业务管理平台</a>
+                <div class="collapse-body">
+                  <div class="mm-step-desc" style="margin-top:8px;">
+                    IC平台上传语音包 → 圈选人群（<strong>系统圈包</strong> 或 <strong>openid上传</strong>）→ 设置触达任务 → 系统实时校验
+                  </div>
+                  <div class="mm-callout info" style="margin-top:8px;">
+                    <strong>首次需申请权限：</strong><br>
+                    投放权限：盘古申请 → 选【短信投放员】/【数据分析员】<br>
+                    业务权限：sms.woa.com → 填项目接口人+业务代码
+                  </div>
+                  <div style="margin-top:6px;">
+                    <a class="mm-link" href="https://gic.woa.com/" target="_blank">🔗 IC平台</a>
+                    <a class="mm-link" href="https://iwiki.woa.com/p/4012582868" target="_blank">🔗 IC投放指引Wiki</a>
+                    <a class="mm-link" href="https://pangu.woa.com/#/app/authApplication" target="_blank">🔗 盘古权限申请</a>
+                    <a class="mm-link" href="https://sms.woa.com/" target="_blank">🔗 通信业务管理平台</a>
+                  </div>
                 </div>
               </div>
 
@@ -643,7 +658,7 @@
               <div>③ 证件文件确认 <span class="mm-step-ddl" style="font-size:10px;">D-28</span></div>
               <div>⑤ 立项 + 充值 <span class="mm-step-ddl" style="font-size:10px;">D-15</span></div>
               <div>⑥ 发邮件审批 <span class="mm-step-ddl" style="font-size:10px;">D-10</span></div>
-              <div>⑦ 语音录制 & 配置 <span class="mm-step-ddl" style="font-size:10px;">D-5~D-2</span></div>
+              <div>⑦ 语音录制 <span class="mm-step-ddl" style="font-size:10px;">D-5~D-2</span></div>
             </div>
           </div>
         </div>
@@ -1002,7 +1017,7 @@ const STEPS = [
   { id:'s5', phase:'mid', name:'米大师业务代码', desc:'申请营销业务代码+语音外呼业务代码，同步群里并邮件', ddl:'D-15', textInput:'bizCode', textLabel:'业务代码号', owner:'ops' },
   { id:'s4', phase:'mid', name:'立项 + 充值', desc:'跟财管确认费用来源；市场费用→MSH立项（⚠️选现金不选内领）→IVR充值单', ddl:'D-15', textInput:'mshCode', textLabel:'MSH立项号', owner:'market' },
   { id:'s7', phase:'mid', name:'发邮件审批', desc:'IVR充值成功后，给组长、财管、短信助手发邮件，邮件发送后联系短信助手配置', ddl:'D-10', owner:'market' },
-  { id:'s8', phase:'mid', name:'语音配置', desc:'角色配音演员或艺人录制（8000Hz/16bit/单声道/WAV/≤6M），完成后交付营销短信助手', ddl:'D-5~D-2', owner:'market' },
+  { id:'s8', phase:'mid', name:'语音录制', desc:'协调配音演员/艺人档期 → 录制 → 后期质检 → 交付营销短信助手', ddl:'D-5~D-2', owner:'market' },
   { id:'s9', phase:'mid', name:'语音包 + 号码包上传', desc:'语音包由助手上传；号码包由运营上传', ddl:'D-2~D-Day', owner:'both' },
   { id:'s10', phase:'post', name:'数据回收 & 归档', desc:'IC平台查看数据、费用结算、归档；双方可查阅或群内沟通助手导出', ddl:'D+3~D+7', owner:'both' }
 ];
